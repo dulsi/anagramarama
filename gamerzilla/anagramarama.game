@@ -1,0 +1,50 @@
+{
+	"shortname": "anagramarama",
+	"name": "Anagramarama",
+	"image": "gamerzilla/anagramarama.png",
+	"version": "1",
+	"trophy": [
+		{
+			"trophy_name": "Fun",
+			"trophy_desc": "Find all the three letter words.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/fun1.png",
+			"falseimage": "gamerzilla/fun0.png"
+		},
+		{
+			"trophy_name": "Good",
+			"trophy_desc": "Find all the four letter words.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/good1.png",
+			"falseimage": "gamerzilla/good0.png"
+		},
+		{
+			"trophy_name": "Great",
+			"trophy_desc": "Find all the five letter words.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/great1.png",
+			"falseimage": "gamerzilla/great0.png"
+		},
+		{
+			"trophy_name": "Exceed",
+			"trophy_desc": "Find all the six letter words.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/exceed1.png",
+			"falseimage": "gamerzilla/exceed0.png"
+		},
+		{
+			"trophy_name": "Amazing",
+			"trophy_desc": "Find all the seven letter words.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/amazing1.png",
+			"falseimage": "gamerzilla/amazing0.png"
+		},
+		{
+			"trophy_name": "Beat the Clock",
+			"trophy_desc": "Win the game.",
+			"max_progress": "0",
+			"trueimage": "gamerzilla/clock1.png",
+			"falseimage": "gamerzilla/clock0.png"
+		}
+	]
+}

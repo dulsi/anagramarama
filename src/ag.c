@@ -77,6 +77,10 @@
 #include "sprite.h"
 #include "ag.h"
 
+#ifdef GAMERZILLA
+#include <gamerzilla.h>
+#endif
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -146,6 +150,13 @@ struct sound {
 	struct sound* next;
 };
 struct sound* soundCache = NULL;
+
+#ifdef GAMERZILLA
+int gameId = -1;
+const char *trophies[] = {
+	"Fun", "Good", "Great", "Exceed", "Amazing"
+};
+#endif
 
 /*
  * On Windows the standard IO channels are not connected to anything
@@ -458,11 +469,13 @@ checkGuess(char* answer, struct node* head)
     struct node* current = head;
     int i, len;
     int foundWord = 0;
+    int foundAllLength = 1;
     char test[8];
     
 	memset(test, 0, sizeof(test));
 	len = nextBlank(answer) - 1;
-    if (len == -1) len = sizeof(test);
+    if (len == -1) len = sizeof(test) - 1;
+printf("%d\n", len);
 	for (i = 0; i < len; i++) {
         assert(i < sizeof(test));
 		test[i] = answer[i];
@@ -478,7 +491,7 @@ checkGuess(char* answer, struct node* head)
 				score += current->length;
 				totalScore += current->length;
 				answersGot++;
-				if (len-1 == bigWordLen) {
+				if (len == bigWordLen) {
 					gotBigWord = 1;
 					Mix_PlayChannel(-1, getSound("foundbig"), 0);
 				} else {
@@ -489,6 +502,9 @@ checkGuess(char* answer, struct node* head)
 					/* getting all answers gives us the game score again!!*/
 					totalScore += score;
 					winGame = 1;
+#ifdef GAMERZILLA
+					GamerzillaSetTrophy(gameId, "Beat the Clock");
+#endif
 				}
 				current->found = 1;
 				current->guessed = 1;
@@ -500,12 +516,18 @@ checkGuess(char* answer, struct node* head)
 			updateAnswers = 1;
 			break;
 		}
+		else if ((!current->found) && (len == strlen(current->anagram))) {
+			foundAllLength = 0;
+		}
 
 		current = current->next;
 	}
 
 	if (!foundWord) {
 		Mix_PlayChannel(-1, getSound("badword"),0);
+	}
+	else if (foundAllLength && !foundDuplicate) {
+		GamerzillaSetTrophy(gameId, trophies[len - 3]);
 	}
 }
 
@@ -1680,6 +1702,11 @@ main(int argc, char *argv[])
 	int audio_channels = 1;
 	int audio_buffers = 256;
 
+#ifdef GAMERZILLA
+	GamerzillaStart(false, "save/");
+	gameId = GamerzillaSetGameFromFile("./gamerzilla/anagramarama.game", "./");
+#endif
+
 	/* seed the random generator */
 	srand((unsigned int)time(NULL));
 
@@ -1744,6 +1771,9 @@ main(int argc, char *argv[])
 	SDL_FreeSurface(smallLetterBank);
 	SDL_FreeSurface(numberBank);
 	/*SDL_Quit(); */
+#ifdef GAMERZILLA
+	GamerzillaQuit();
+#endif
 	return 0;
 }
 

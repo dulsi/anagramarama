@@ -3,8 +3,8 @@
 CC=gcc
 LD=gcc
 CFLAGS  =-Wall `sdl-config --cflags`
-CFLAGS +=-O9 -funroll-loops -fomit-frame-pointer
-LDFLAGS=`sdl-config --libs` -lSDL_mixer
+CFLAGS +=-O9 -funroll-loops -fomit-frame-pointer -DGAMERZILLA `pkg-config gamerzilla --cflags`
+LDFLAGS=`sdl-config --libs` -lSDL_mixer `pkg-config gamerzilla --libs`
 
 ifdef DEBUG
 CFLAGS +=-g -DDEBUG -D_DEBUG
