@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Anagramarama
+Exec=anagramarama
+Terminal=false
+Categories=Game;KidsGame;LogicGame;
+Comment=fast paced anagram puzzle game using SDL
+Icon=anagramarama
