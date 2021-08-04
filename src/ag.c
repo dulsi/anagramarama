@@ -107,7 +107,9 @@ Box hotbox[6] = {
 /* module level variables for game control */
 char shuffle[8] = SPACE_FILLED_CHARS;
 char answer[8]  = SPACE_FILLED_CHARS;
-char language[64];
+char language[256];
+char userPath[256];
+char basePath[256];
 char txt[50];
 char rootWord[9];
 int updateAnswers = 0;
@@ -242,7 +244,13 @@ pushSound(struct sound **soundCache, const char *name, const char *filename)
 	thisSound->next = *soundCache;
 
 	/* Attempt to load a sample */
-	thisSound->audio_chunk = Mix_LoadWAV(filename);
+	thisSound->audio_chunk = NULL;
+	char tempfilename[512];
+	strcpy(tempfilename, basePath);
+	if ((tempfilename[0] != 0) && (tempfilename[strlen(tempfilename)-1] != '/'))
+		strcat(tempfilename, "/");
+	strcat(tempfilename, filename);
+	thisSound->audio_chunk = Mix_LoadWAV(tempfilename);
 
 	*soundCache = thisSound;
 }
@@ -1616,6 +1624,69 @@ loadConfig(const char *path)
 }
 
 /*
+ * Get the current language string from either the environment.
+ * This is used to location the wordlist and other localized resources.
+ *
+ * Sets the global variable 'language'
+ */
+
+static int
+init_locale_prefix(char *prefix)
+{
+    char *lang = NULL, *p = NULL;
+
+    lang = getenv("LANG");
+    if (lang != NULL) {
+        strcpy(language,prefix);
+		if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
+			strcat(language, "/");
+        strcat(language,"i18n/");
+        strcat(language, lang);
+        if (is_valid_locale(language))
+            return 1;
+        while ((p = strrchr(language, '.')) != NULL) {
+            *p = 0;
+            if (is_valid_locale(language))
+                return 1;
+        }
+        if ((p = strrchr(language, '_')) != NULL) {
+            *p = 0;
+            if (is_valid_locale(language))
+                return 1;
+        }
+    }
+
+#ifdef WIN32
+    {
+        LCID lcid = GetThreadLocale();
+        strcpy(language,prefix);
+		if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
+			strcat(language, "/");
+        strcat(language,"i18n/");
+        GetLocaleInfoA(lcid, LOCALE_SISO639LANGNAME, 
+                       language + strlen(language), sizeof(language));
+        p = language + strlen(language);
+        strcat(language, "_");
+        GetLocaleInfo(lcid, LOCALE_SISO3166CTRYNAME, 
+                      language + strlen(language), sizeof(language));
+        Debug("locale %s", language);
+        if (is_valid_locale(language))
+            return 1;
+        *p = 0;
+        if (is_valid_locale(language))
+            return 1;
+    }
+#endif /* WIN32 */
+
+    /* last resort - use the english locale */
+    strcpy(language, prefix);
+	if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
+		strcat(language, "/");
+    strcat(language, DEFAULT_LOCALE_PATH);
+    return is_valid_locale(language);
+}
+
+/*
  * Get the current language string from either the environment or
  * the command line. This is used to location the wordlist and
  * other localized resources.
@@ -1635,45 +1706,54 @@ init_locale(int argc, char *argv[])
             return;
 	}
 
-    lang = getenv("LANG");
-    if (lang != NULL) {
-        strcpy(language,"i18n/");
-        strcat(language, lang);
-        if (is_valid_locale(language))
-            return;
-        while ((p = strrchr(language, '.')) != NULL) {
-            *p = 0;
-            if (is_valid_locale(language))
-                return;
-        }
-        if ((p = strrchr(language, '_')) != NULL) {
-            *p = 0;
-            if (is_valid_locale(language))
-                return;
-        }
-    }
+#ifdef DATA_PATH
+	if (init_locale_prefix(DATA_PATH))
+		return;
+#endif
+	init_locale_prefix("");
+}
 
+static char *
+get_user_path()
+{
 #ifdef WIN32
-    {
-        LCID lcid = GetThreadLocale();
-        strcpy(language,"i18n/");
-        GetLocaleInfoA(lcid, LOCALE_SISO639LANGNAME, 
-                       language + strlen(language), sizeof(language));
-        p = language + strlen(language);
-        strcat(language, "_");
-        GetLocaleInfo(lcid, LOCALE_SISO3166CTRYNAME, 
-                      language + strlen(language), sizeof(language));
-        Debug("locale %s", language);
-        if (is_valid_locale(language))
-            return;
-        *p = 0;
-        if (is_valid_locale(language))
-            return;
-    }
-#endif /* WIN32 */
+	strcpy(userPath, "save/");
+#else
+	//Temp variable that is used to prevent NULL assignement.
+	char* env;
 
-    /* last resort - use the english locale */
-    strcpy(language, DEFAULT_LOCALE_PATH);
+	//First get the $XDG_CONFIG_HOME env var.
+	env=getenv("XDG_DATA_HOME");
+	//If it's null set userPath to $HOME/.config/.
+	if(env!=NULL){
+		strcpy(userPath, env);
+	}else{
+		strcpy(userPath, getenv("HOME"));
+		strcat(userPath, "/.local/share");
+	}
+	strcat(userPath, "/anagramarama/");
+#endif
+	return userPath;
+}
+
+static char *
+get_base_path()
+{
+#ifdef DATA_PATH
+	char tempfilename[512];
+	strcpy(basePath, DATA_PATH);
+	if ((basePath[0] != 0) && (basePath[strlen(basePath)-1] != '/'))
+		strcat(basePath, "/");
+	strcpy(tempfilename, basePath);
+	strcat(tempfilename, "gamerzilla/anagramarama.game");
+	FILE *f = fopen(tempfilename, "r");
+	if (f) {
+		fclose(f);
+		return basePath;
+	}
+#endif
+	strcpy(basePath, "./");
+	return basePath;
 }
 
 /***********************************************************
@@ -1702,8 +1782,14 @@ main(int argc, char *argv[])
 	int audio_buffers = 256;
 
 #ifdef GAMERZILLA
-	GamerzillaStart(false, "save/");
-	gameId = GamerzillaSetGameFromFile("./gamerzilla/anagramarama.game", "./");
+	{
+		char jsonfile[512];
+		char *basepath = get_base_path();
+		GamerzillaStart(false, get_user_path());
+		strcpy(jsonfile, basepath);
+		strcat(jsonfile, "gamerzilla/anagramarama.game");
+		gameId = GamerzillaSetGameFromFile(jsonfile, basepath);
+	}
 #endif
 
 	/* seed the random generator */
