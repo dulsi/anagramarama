@@ -475,7 +475,6 @@ checkGuess(char* answer, struct node* head)
 	memset(test, 0, sizeof(test));
 	len = nextBlank(answer) - 1;
     if (len == -1) len = sizeof(test) - 1;
-printf("%d\n", len);
 	for (i = 0; i < len; i++) {
         assert(i < sizeof(test));
 		test[i] = answer[i];
