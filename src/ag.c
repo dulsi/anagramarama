@@ -110,7 +110,7 @@ char answer[8]  = SPACE_FILLED_CHARS;
 char language[256];
 char userPath[256];
 char basePath[256];
-char txt[50];
+char txt[256];
 char rootWord[9];
 int updateAnswers = 0;
 int startNewGame = 0;
