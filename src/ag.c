@@ -533,9 +533,11 @@ checkGuess(char* answer, struct node* head)
 	if (!foundWord) {
 		Mix_PlayChannel(-1, getSound("badword"),0);
 	}
+#ifdef GAMERZILLA
 	else if (foundAllLength && !foundDuplicate) {
 		GamerzillaSetTrophy(gameId, trophies[len - 3]);
 	}
+#endif
 }
 
 /***********************************************************
