@@ -523,10 +523,14 @@ checkGuess(char* answer, struct node* head)
 			updateAnswers = 1;
 			break;
 		}
-		else if ((!current->found) && (len == strlen(current->anagram))) {
+
+		current = current->next;
+	}
+	current = head;
+	while (current != NULL) {
+		if ((!current->found) && (len == strlen(current->anagram))) {
 			foundAllLength = 0;
 		}
-
 		current = current->next;
 	}
 
