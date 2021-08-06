@@ -69,6 +69,7 @@ Install (DIRECTORY ${PROJECT_SOURCE_DIR}/audio ${PROJECT_SOURCE_DIR}/gamerzilla 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	Install (FILES man/anagramarama.6 DESTINATION ${DATAROOTDIR}/man/man6/)
 	Install (FILES anagramarama.desktop DESTINATION ${DESKTOPDIR})
+	Install (FILES anagramarama.metainfo.xml DESTINATION ${DATAROOTDIR}/metainfo/)
 	Install (FILES icons/16x16/anagramarama.png DESTINATION ${ICONDIR}/hicolor/16x16/apps/)
 	Install (FILES icons/32x32/anagramarama.png DESTINATION ${ICONDIR}/hicolor/32x32/apps/)
 	Install (FILES icons/48x48/anagramarama.png DESTINATION ${ICONDIR}/hicolor/48x48/apps/)

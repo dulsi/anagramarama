@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2021 Dennis Payne <dulsi@identicalsoftware.com> -->
+<component type="desktop-application">
+  <id>anagramarama</id>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <name>Anagramarama</name>
+  <summary>Make words from a jumble of letters</summary>
+
+  <description>
+    <p>
+      Anagramarama is a simple wordgame in which one tries to guess all the different
+      permutations of a scrambled word which form another word within the
+      time limit.  Guess the original word and you move on to the next
+      level.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">anagramarama.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>http://www.identicalsoftware.com/angramarama/screenshot1.png</image>
+    </screenshot>
+    <screenshot>
+      <image>http://www.identicalsoftware.com/angramarama/screenshot2.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">http://www.identicalsoftware.com/angramarama/</url>
+
+  <provides>
+    <binary>anagramarama</binary>
+  </provides>
+
+  <releases>
+    <release version="0.4" date="2010-08-24" />
+  </releases>
+</component>

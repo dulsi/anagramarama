@@ -1,0 +1,25 @@
+body {
+  margin:40px auto;
+  max-width:1280px;
+  line-height:1.6;
+  font-size:110%;
+  padding:0 15px;
+  padding-bottom: 1em;
+  background-color: #8AAAF6;
+  background-image: url("background.png");
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-attachment: fixed;
+}
+h1,h2,h3 {
+  line-height:1.2
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: white;
+  text-align: center;
+}
