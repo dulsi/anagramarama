@@ -1,5 +1,18 @@
 Anagramarama
 
+How to compile/install it?
+
+The easiest current solution is to use cmake with a command like:
+
+cmake . && make && sudo make install
+
+The game need SDL and SDL_mixer installed. It has optional support for libgamerzilla. The game can run without installing it if you want to test it.
+
+The older platform makefiles are still included at the moment. They have not been tested. They still build the game as "ag" instead of "anagramarama".
+
+
+Changelog
+
 Version 0.1 -   still needs a high score table and some
 		informational messages, but you can play a game.
 
@@ -11,7 +24,10 @@ Version 0.3 -   Added internationalisation, portuguese is the first available
 Version 0.4 -   Numerous bug-fixes and French support.
 
 Version 0.5 -   Italian translation (by Michele Bucelli)
+  Added achievements with Gamerzilla.
 
+
+License
 
 Copyright (c) 2003-2010 Colm Gallagher et al.
 
