@@ -1,6 +1,6 @@
 Name:           anagramarama
 Version:        0.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Anagram puzzle game
 License:        GPLv2+
 URL:            http://identicalsoftware.com/anagramarama/
@@ -36,6 +36,9 @@ level.
 
 %install
 %cmake_install
+
+
+%check
 desktop-file-validate %{buildroot}%{_datadir}/applications/anagramarama.desktop
 appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/anagramarama.metainfo.xml
 
@@ -48,9 +51,12 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/anagramarama.m
 %{_datadir}/icons/hicolor/*/apps/anagramarama.png
 %{_metainfodir}/%{name}.metainfo.xml
 %{_datadir}/applications/anagramarama.desktop
-%{_datadir}/man/man6/anagramarama.6.gz
+%{_datadir}/man/man6/anagramarama.6*
 
 
 %changelog
-* Fri Aug 06 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5
+* Fri Aug 06 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5-2
+- Changed man page to use asterisk and moved commands to check section
+
+* Fri Aug 06 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5-1
 - Initial build
