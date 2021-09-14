@@ -1,8 +1,9 @@
 Name:           anagramarama
 Version:        0.5
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Anagram puzzle game
-License:        GPLv2+
+# Almost all is GPLv2+ with some graphics being CC-BY-SA
+License:        GPLv2+ and CC-BY-SA
 URL:            http://identicalsoftware.com/anagramarama/
 
 Source0:        %{url}/%{name}-%{version}.tgz
@@ -39,22 +40,25 @@ level.
 
 
 %check
-desktop-file-validate %{buildroot}%{_datadir}/applications/anagramarama.desktop
-appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/anagramarama.metainfo.xml
+desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
+appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{name}.metainfo.xml
 
 
 %files
 %doc readme
 %license gpl.txt
-%{_bindir}/anagramarama
-%{_datadir}/anagramarama
-%{_datadir}/icons/hicolor/*/apps/anagramarama.png
+%{_bindir}/%{name}
+%{_datadir}/%{name}
+%{_datadir}/icons/hicolor/*/apps/%{name}.png
 %{_metainfodir}/%{name}.metainfo.xml
-%{_datadir}/applications/anagramarama.desktop
-%{_datadir}/man/man6/anagramarama.6*
+%{_datadir}/applications/%{name}.desktop
+%{_datadir}/man/man6/%{name}.6*
 
 
 %changelog
+* Mon Sep 13 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5-3
+- Use name macro everywhere and updated license
+
 * Fri Aug 06 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5-2
 - Changed man page to use asterisk and moved commands to check section
 
