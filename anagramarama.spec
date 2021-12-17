@@ -1,6 +1,6 @@
 Name:           anagramarama
-Version:        0.5
-Release:        3%{?dist}
+Version:        0.6
+Release:        1%{?dist}
 Summary:        Anagram puzzle game
 # Almost all is GPLv2+ with some graphics being CC-BY-SA
 License:        GPLv2+ and CC-BY-SA
@@ -14,8 +14,9 @@ BuildRequires: gcc-c++
 BuildRequires: libgamerzilla-devel
 BuildRequires: libappstream-glib
 BuildRequires: make
-BuildRequires: SDL-devel
-BuildRequires: SDL_mixer-devel
+BuildRequires: SDL2-devel
+BuildRequires: SDL2_mixer-devel
+BuildRequires: SDL2_image-devel
 Requires:      hicolor-icon-theme
 
 
@@ -56,6 +57,9 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{name}.metain
 
 
 %changelog
+* Thu Dec 16 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.6-1
+- Newest release
+
 * Mon Sep 13 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.5-3
 - Use name macro everywhere and updated license
 
