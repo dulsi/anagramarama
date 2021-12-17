@@ -29,9 +29,17 @@ Contact Details: colm@coralquest.com
 #define BOX_START_X 80
 #define ANSWER_BOX_Y 243
 
+struct element {
+	SDL_Texture *t;
+	SDL_Rect w;
+	int x, y;
+};
+
 struct sprite {
-	SDL_Surface* sprite;
-	SDL_Surface* replace;
+	struct element *spr;
+	int numSpr;
+//	SDL_Surface* sprite;
+//	SDL_Surface* replace;
 	char letter;
 	int x,y,w,h;
 	int toX, toY;
@@ -40,7 +48,7 @@ struct sprite {
 	int box;
 };
 
-void moveSprites(SDL_Surface** screen, struct sprite** letters, int LetterSpeed);
+void moveSprites(SDL_Renderer** screen, struct sprite** letters, int LetterSpeed);
 int nextBlankPosition(int box, int *index);
 void destroyLetters(struct sprite **letters);
 int anySpritesMoving(struct sprite **letters);

@@ -22,12 +22,12 @@ Contact Details: colm@coralquest.com
 
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include "sprite.h"
 
 /********************************************************************/
 static void
-setBackground(SDL_Surface **screen, struct sprite **movie)
+setBackground(SDL_Renderer **screen, struct sprite **movie)
 {
     SDL_Rect rect;
 
@@ -37,12 +37,12 @@ setBackground(SDL_Surface **screen, struct sprite **movie)
 	rect.h = (*movie)->h;
 
 	// copy the background into the replace buffer
-	SDL_BlitSurface(*screen, &rect, (*movie)->replace, NULL);
+//	SDL_BlitSurface(*screen, &rect, (*movie)->replace, NULL);
 }
 
 /********************************************************************/
 static void
-showSprite(SDL_Surface **screen, struct sprite **movie)
+showSprite(SDL_Renderer **screen, struct sprite **movie)
 {
     SDL_Rect rect;
 
@@ -52,13 +52,20 @@ showSprite(SDL_Surface **screen, struct sprite **movie)
 	rect.h = (*movie)->h;
 
 	// display the image in new location
-	SDL_SetColorKey((*movie)->sprite, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->sprite->format,255,0,255));
-	SDL_BlitSurface((*movie)->sprite, NULL, *screen, &rect);
+	for (int i = 0; i < (*movie)->numSpr; i++) {
+		rect.x = (*movie)->x + (*movie)->spr[i].x;
+		rect.y = (*movie)->y + (*movie)->spr[i].y;
+		rect.w = (*movie)->spr[i].w.w;
+		rect.h = (*movie)->spr[i].w.h;
+		SDL_RenderCopy(*screen, (*movie)->spr[i].t, &(*movie)->spr[i].w, &rect);
+	}
+//	SDL_SetColorKey((*movie)->sprite, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->sprite->format,255,0,255));
+//	SDL_BlitSurface((*movie)->sprite, NULL, *screen, &rect);
 }
 
 /********************************************************************/
 static void
-resetBackground(SDL_Surface** screen, struct sprite** movie)
+resetBackground(SDL_Renderer** screen, struct sprite** movie)
 {
     SDL_Rect rect;
 
@@ -68,8 +75,8 @@ resetBackground(SDL_Surface** screen, struct sprite** movie)
 	rect.h = (*movie)->h;
 
 	// put the screen back the way it was
-	SDL_SetColorKey((*movie)->replace, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->replace->format,255,0,255));
-	SDL_BlitSurface((*movie)->replace, NULL, *screen, &rect);
+//	SDL_SetColorKey((*movie)->replace, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->replace->format,255,0,255));
+//	SDL_BlitSurface((*movie)->replace, NULL, *screen, &rect);
 }
 
 /********************************************************************/
@@ -93,7 +100,7 @@ anySpritesMoving(struct sprite **letters)
 
 /********************************************************************/
 static void
-moveSprite(SDL_Surface** screen, struct sprite** movie, int letterSpeed)
+moveSprite(SDL_Renderer** screen, struct sprite** movie, int letterSpeed)
 {
     int i;
     int x, y;
@@ -137,7 +144,7 @@ moveSprite(SDL_Surface** screen, struct sprite** movie, int letterSpeed)
 
 /********************************************************************/
 void
-moveSprites(SDL_Surface** screen, struct sprite** letters, int letterSpeed)
+moveSprites(SDL_Renderer** screen, struct sprite** letters, int letterSpeed)
 {
     struct sprite* current;
 
@@ -151,7 +158,8 @@ moveSprites(SDL_Surface** screen, struct sprite** letters, int letterSpeed)
 		showSprite(&(*screen), &current);
 		current=current->next;
 	}
-	SDL_Flip(*screen);
+	SDL_RenderPresent(*screen);
+//	SDL_Flip(*screen);
 	current = *letters;
 	while(current!=NULL){
 		resetBackground(&(*screen), &current);
@@ -166,8 +174,10 @@ destroyLetters(struct sprite **letters)
     struct sprite *current = *letters;
 	while (current != NULL) {
 		struct sprite *tmp = current;
-		SDL_FreeSurface(current->sprite);
-		SDL_FreeSurface(current->replace);
+		if (current->numSpr > 0)
+			free(current->spr);
+//		SDL_FreeSurface(current->sprite);
+//		SDL_FreeSurface(current->replace);
 		current = current->next;
 		free(tmp);
 	}

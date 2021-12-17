@@ -69,8 +69,9 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_mixer.h>
+#include <SDL_image.h>
 
 #include "dlb.h"
 #include "linked.h"
@@ -137,9 +138,12 @@ int winGame = 0;
 int letterSpeed = LETTER_FAST;
 
 /* Graphics cache */
-SDL_Surface* letterBank = NULL;
-SDL_Surface* smallLetterBank = NULL;
-SDL_Surface* numberBank = NULL;
+SDL_Texture* backgroundTex = NULL;
+SDL_Texture* letterBank = NULL;
+SDL_Texture* smallLetterBank = NULL;
+SDL_Texture* numberBank = NULL;
+SDL_Texture* answerBoxUnknown = NULL;
+SDL_Texture* answerBoxKnown = NULL;
 struct sprite* clockSprite = NULL;
 struct sprite* scoreSprite = NULL;
 
@@ -309,37 +313,28 @@ synopsis: load the named image to position x,y onto the
 
 inputs:  file - the filename to load (.BMP)
 	 screen - the SDL_Surface to display the image
-	 x,y - the top left postion
 
 outputs:  n/a
 ***********************************************************/
 static void
-ShowBMP(const char *file, SDL_Surface *screen, int x, int y)
+ShowBMP(const char *file, SDL_Renderer *screen)
 {
-	SDL_Surface *image;
+	SDL_Surface *imageSurf;
+	SDL_Texture *image;
 	SDL_Rect dest;
 
 	/* Load the BMP file into a surface */
-	image = SDL_LoadBMP(file);
-	if ( image == NULL ) {
+	imageSurf = SDL_LoadBMP(file);
+	if ( imageSurf == NULL ) {
 		Error("Couldn't load %s: %s\n", file, SDL_GetError());
 		return;
 	}
-
-	/* Blit onto the screen surface.
-	 *        The surfaces should not be locked at this point.
-	 */
-	dest.x = x;
-	dest.y = y;
-	dest.w = 50;
-	dest.h = 50;
-
-	SDL_SetColorKey(image, SDL_SRCCOLORKEY, SDL_MapRGB(image->format,255,0,255));
-
-	SDL_BlitSurface(image, NULL, screen, &dest);
+	image = SDL_CreateTextureFromSurface(screen, imageSurf);
+	SDL_RenderCopy(screen, image, NULL, NULL);
 
 	/* Update the changed portion of the screen */
-	SDL_FreeSurface(image);
+	SDL_FreeSurface(imageSurf);
+	SDL_DestroyTexture(image);
 }
 
 
@@ -359,7 +354,7 @@ inputs:   head - pointer to the answers linked list
 outputs:  n/a
 ***********************************************************/
 static void
-displayAnswerBoxes(struct node* head, SDL_Surface* screen)
+displayAnswerBoxes(struct node* head, SDL_Renderer* screen)
 {
     struct node* current = head;
     SDL_Rect outerrect, innerrect, letterBankRect;
@@ -369,6 +364,24 @@ displayAnswerBoxes(struct node* head, SDL_Surface* screen)
     int numLetters = 0;
     int listLetters = 0;
 
+	if (answerBoxUnknown == NULL)
+	{
+		outerrect.w = 16;
+		outerrect.h = 16;
+		outerrect.x = 0;
+		outerrect.y = 0;
+		SDL_Surface *box = SDL_CreateRGBSurface(0,16,16,32,0,0,0,0);
+		SDL_FillRect(box, &outerrect,0);
+		innerrect.w = outerrect.w - 1;
+		innerrect.h = outerrect.h - 1;
+		innerrect.x = outerrect.x + 1;
+		innerrect.y = outerrect.y + 1;
+		SDL_FillRect(box, &innerrect,SDL_MapRGB(box->format,217,220,255));
+		answerBoxUnknown = SDL_CreateTextureFromSurface(screen, box);
+		SDL_FillRect(box, &innerrect,SDL_MapRGB(box->format,255,255,255));
+		answerBoxKnown = SDL_CreateTextureFromSurface(screen, box);
+		SDL_FreeSurface(box);
+	}
 	/* width and height are always the same */
 	outerrect.w = 16;
 	outerrect.h = 16;
@@ -390,27 +403,26 @@ displayAnswerBoxes(struct node* head, SDL_Surface* screen)
 		for (i=0;i<current->length;i++) {
 
 			numLetters++;
+			if (current->guessed) {
+				SDL_RenderCopy(screen, answerBoxKnown, NULL, &outerrect);
+			}
+			else {
+				SDL_RenderCopy(screen, answerBoxUnknown, NULL, &outerrect);
+			}
 
-			SDL_FillRect(screen, &outerrect,0);
 			innerrect.w = outerrect.w - 1;
 			innerrect.h = outerrect.h - 1;
 			innerrect.x = outerrect.x + 1;
 			innerrect.y = outerrect.y + 1;
-
-			if (current->guessed){
-				SDL_FillRect(screen, &innerrect,SDL_MapRGB(screen->format,255,255,255));
-			}
-			else{
-				SDL_FillRect(screen, &innerrect,SDL_MapRGB(screen->format,217,220,255));
-			}
 
 			if (current->found) {
                 int c = (int)(current->anagram[i] - 'a');
                 assert(c > -1);
 				innerrect.x += 2;
 				letterBankRect.x = 10 * c;
-				SDL_SetColorKey(smallLetterBank, SDL_SRCCOLORKEY, SDL_MapRGB(smallLetterBank->format,255,0,255));
-				SDL_BlitSurface(smallLetterBank, &letterBankRect, screen, &innerrect);
+				innerrect.w = letterBankRect.w;
+				innerrect.h = letterBankRect.h;
+				SDL_RenderCopy(screen, smallLetterBank, &letterBankRect, &innerrect);
 			}
 
 			outerrect.x += 18;
@@ -732,7 +744,7 @@ inputs:  button - mouse button that has ben clicked
 outputs:  n/a
 ***********************************************************/
 static void
-clickDetect(int button, int x, int y, SDL_Surface *screen, 
+clickDetect(int button, int x, int y, SDL_Renderer *screen,
             struct node* head, struct sprite** letters)
 {
 
@@ -848,7 +860,7 @@ inputs: screen - the SDL_Surface to display the image
 outputs: n/a
 ***********************************************************/
 static void
-updateScore(SDL_Surface* screen)
+updateScore(SDL_Renderer* screen)
 {
     /* we'll display the total Score, this is the game score */
     
@@ -876,7 +888,9 @@ updateScore(SDL_Surface* screen)
 	for (i = 0; i < strlen(buffer); i++){
 		fromrect.x = SCORE_WIDTH * ((int)buffer[i]-48);
 		torect.x = SCORE_WIDTH * i;
-		SDL_BlitSurface(numberBank, &fromrect, scoreSprite->sprite, &torect);
+		scoreSprite->spr[i].w = fromrect;
+		scoreSprite->spr[i].x = torect.x;
+//		SDL_BlitSurface(numberBank, &fromrect, scoreSprite->sprite, &torect);
 	}
 }
 
@@ -891,7 +905,7 @@ inputs: screen - the SDL_Surface to display the image
 outputs: n/a
 ***********************************************************/
 static void
-updateTime(SDL_Surface* screen)
+updateTime(SDL_Renderer* screen)
 {
     /* the time is x seconds  minus the number of seconds of game time */
     int thisTime;
@@ -928,16 +942,20 @@ updateTime(SDL_Surface* screen)
 
 	fromrect.x = CLOCK_WIDTH * minute_tens;
 	torect.x = CLOCK_WIDTH * 0;
-	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
+	clockSprite->spr[0].w = fromrect;
+//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * minute_units;
 	torect.x = CLOCK_WIDTH * 1;
-	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
+	clockSprite->spr[1].w = fromrect;
+//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * second_tens;
 	torect.x = CLOCK_WIDTH * 3;
-	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
+	clockSprite->spr[3].w = fromrect;
+//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * second_units;
 	torect.x = CLOCK_WIDTH * 4;
-	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
+	clockSprite->spr[4].w = fromrect;
+//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 
 	/* tick out the last 10 seconds */
 	if (thisTime<=10 && thisTime>0) {
@@ -1055,13 +1073,13 @@ inputs: letters - letter sprites head node (in/out)
 outputs: n/a
 ***********************************************************/
 void
-buildLetters(struct sprite** letters, SDL_Surface* screen)
+buildLetters(struct sprite** letters, SDL_Renderer* screen)
 {
     struct sprite *thisLetter = NULL, *previousLetter = NULL;
     int i;
     int len;
     SDL_Rect rect, blankRect;
-    Uint32 flags = SDL_SRCCOLORKEY;
+//    Uint32 flags = SDL_SRCCOLORKEY;
     Uint8 bpp;
     Uint32 rmask, gmask, bmask, amask;
     int index = 0;
@@ -1077,20 +1095,21 @@ buildLetters(struct sprite** letters, SDL_Surface* screen)
 
 	len = strlen(shuffle);
 
-	if(screen->flags & SDL_SWSURFACE)
-			flags |= SDL_SWSURFACE;
-	if(screen->flags & SDL_HWSURFACE)
-			flags |= SDL_HWSURFACE;
+//	if(screen->flags & SDL_SWSURFACE)
+//			flags |= SDL_SWSURFACE;
+//	if(screen->flags & SDL_HWSURFACE)
+//			flags |= SDL_HWSURFACE;
 
-	bpp = screen->format->BitsPerPixel;
-	rmask = screen->format->Rmask;
-	gmask = screen->format->Gmask;
-	bmask = screen->format->Bmask;
-	amask = screen->format->Amask;
+//	bpp = screen->format->BitsPerPixel;
+//	rmask = screen->format->Rmask;
+//	gmask = screen->format->Gmask;
+//	bmask = screen->format->Bmask;
+//	amask = screen->format->Amask;
 
 	for (i=0; i < len; i++) {
 
 		thisLetter = malloc(sizeof(struct sprite));
+		thisLetter->numSpr = 0;
 
 		/* determine which letter we're wanting and load it from 
          * the letterbank*/
@@ -1098,16 +1117,22 @@ buildLetters(struct sprite** letters, SDL_Surface* screen)
             int chr = (int)(shuffle[i] - 'a');
             assert(chr > -1);
 			rect.x = chr * GAME_LETTER_WIDTH;
-			thisLetter->sprite = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
-			thisLetter->replace = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
+			thisLetter->numSpr = 1;
+			thisLetter->spr = malloc(sizeof(struct element));
+			thisLetter->spr[0].t = letterBank;
+			thisLetter->spr[0].w = rect;
+			thisLetter->spr[0].x = 0;
+			thisLetter->spr[0].y = 0;
+//			thisLetter->sprite = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
+//			thisLetter->replace = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
 
-			SDL_BlitSurface(letterBank, &rect, thisLetter->sprite, NULL);
-			SDL_BlitSurface(letterBank, &blankRect, thisLetter->replace, NULL);
+//			SDL_BlitSurface(letterBank, &rect, thisLetter->sprite, NULL);
+//			SDL_BlitSurface(letterBank, &blankRect, thisLetter->replace, NULL);
 			thisLetter->x = rand() % 799;/*i * (GAME_LETTER_WIDTH + GAME_LETTER_SPACE) + BOX_START_X;*/
 			thisLetter->y = rand() % 599; /* SHUFFLE_BOX_Y; */
 			thisLetter->letter = shuffle[i];
-			thisLetter->h = thisLetter->sprite->h;
-			thisLetter->w = thisLetter->sprite->w;
+			thisLetter->h = GAME_LETTER_HEIGHT;
+			thisLetter->w = GAME_LETTER_WIDTH;
 			thisLetter->toX = i * (GAME_LETTER_WIDTH + GAME_LETTER_SPACE) + BOX_START_X;
 			thisLetter->toY = SHUFFLE_BOX_Y;
 			thisLetter->next = previousLetter;
@@ -1142,14 +1167,14 @@ inputs: letters - letter sprites head node (in/out)
 outputs: n/a
 ***********************************************************/
 static void
-addClock(struct sprite** letters, SDL_Surface* screen)
+addClock(struct sprite** letters, SDL_Renderer* screen)
 {
     struct sprite *thisLetter = NULL;
     struct sprite *previousLetter = NULL;
     struct sprite *current = *letters;
     int i;
     SDL_Rect fromrect, torect, blankRect;
-    Uint32 flags = SDL_SRCCOLORKEY;
+//    Uint32 flags = SDL_SRCCOLORKEY;
     Uint8 bpp;
     Uint32 rmask, gmask, bmask, amask;
     int index = 0;
@@ -1168,16 +1193,16 @@ addClock(struct sprite** letters, SDL_Surface* screen)
 	torect.w = CLOCK_WIDTH;
 	torect.h = CLOCK_HEIGHT;
 	
-	if(screen->flags & SDL_SWSURFACE)
-			flags |= SDL_SWSURFACE;
-	if(screen->flags & SDL_HWSURFACE)
-			flags |= SDL_HWSURFACE;
+//	if(screen->flags & SDL_SWSURFACE)
+//			flags |= SDL_SWSURFACE;
+//	if(screen->flags & SDL_HWSURFACE)
+//			flags |= SDL_HWSURFACE;
 
-	bpp = screen->format->BitsPerPixel;
-	rmask = screen->format->Rmask;
-	gmask = screen->format->Gmask;
-	bmask = screen->format->Bmask;
-	amask = screen->format->Amask;
+//	bpp = screen->format->BitsPerPixel;
+//	rmask = screen->format->Rmask;
+//	gmask = screen->format->Gmask;
+//	bmask = screen->format->Bmask;
+//	amask = screen->format->Amask;
 
 	/* add the clock onto the end - so we don't slow letter processing any*/
 	while (current != NULL){
@@ -1187,15 +1212,20 @@ addClock(struct sprite** letters, SDL_Surface* screen)
 
 	thisLetter=malloc(sizeof(struct sprite));
 
-	thisLetter->sprite = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
-	thisLetter->replace = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
+//	thisLetter->sprite = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
+//	thisLetter->replace = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
 
+	thisLetter->spr = malloc(sizeof(struct element) * 5);
+	thisLetter->numSpr = 5;
 	/* initialise with 05:00*/
 	for (i=0;i<5;i++){
 
         /*	printf("i:%i\n", CLOCK_WIDTH * i); */
+		thisLetter->spr[i].t = numberBank;
+		thisLetter->spr[i].y = 0;
 		
 		torect.x = CLOCK_WIDTH * i;
+		thisLetter->spr[i].x = torect.x;
 		switch(i){
 
 			case 1:
@@ -1212,16 +1242,17 @@ addClock(struct sprite** letters, SDL_Surface* screen)
 			default:
 				break;
 		}
+		thisLetter->spr[i].w = fromrect;
 
-		SDL_BlitSurface(numberBank, &fromrect, thisLetter->sprite, &torect);
+//		SDL_BlitSurface(numberBank, &fromrect, thisLetter->sprite, &torect);
 
-		SDL_BlitSurface(numberBank, &blankRect, thisLetter->replace, &torect);
+//		SDL_BlitSurface(numberBank, &blankRect, thisLetter->replace, &torect);
 	}
 
 	thisLetter->x = CLOCK_X;
 	thisLetter->y = CLOCK_Y;
-	thisLetter->h = thisLetter->sprite->h;
-	thisLetter->w = thisLetter->sprite->w;
+	thisLetter->h = CLOCK_HEIGHT;
+	thisLetter->w = CLOCK_WIDTH * thisLetter->numSpr;
 	thisLetter->toX = thisLetter->x;
 	thisLetter->toY = thisLetter->y;
 	thisLetter->next = NULL;
@@ -1245,13 +1276,13 @@ inputs: letters - letter sprites head node (in/out)
 outputs: n/a
 ***********************************************************/
 static void
-addScore(struct sprite** letters, SDL_Surface* screen)
+addScore(struct sprite** letters, SDL_Renderer* screen)
 {
     struct sprite *thisLetter = NULL;
     struct sprite *previousLetter = NULL;
     struct sprite *current = *letters;
     SDL_Rect fromrect, torect, blankRect;
-    Uint32 flags = SDL_SRCCOLORKEY;
+//    Uint32 flags = SDL_SRCCOLORKEY;
     Uint8 bpp;
     Uint32 rmask, gmask, bmask, amask;
     int index = 0;
@@ -1271,16 +1302,16 @@ addScore(struct sprite** letters, SDL_Surface* screen)
 	torect.w = SCORE_WIDTH;
 	torect.h = SCORE_HEIGHT;
 	
-	if(screen->flags & SDL_SWSURFACE)
-			flags |= SDL_SWSURFACE;
-	if(screen->flags & SDL_HWSURFACE)
-			flags |= SDL_HWSURFACE;
+//	if(screen->flags & SDL_SWSURFACE)
+//			flags |= SDL_SWSURFACE;
+//	if(screen->flags & SDL_HWSURFACE)
+//			flags |= SDL_HWSURFACE;
 
-	bpp = screen->format->BitsPerPixel;
-	rmask = screen->format->Rmask;
-	gmask = screen->format->Gmask;
-	bmask = screen->format->Bmask;
-	amask = screen->format->Amask;
+//	bpp = screen->format->BitsPerPixel;
+//	rmask = screen->format->Rmask;
+//	gmask = screen->format->Gmask;
+//	bmask = screen->format->Bmask;
+//	amask = screen->format->Amask;
 
 	/* add the score onto the end - so we don't slow letter processing any */
 	while (current != NULL){
@@ -1291,9 +1322,11 @@ addScore(struct sprite** letters, SDL_Surface* screen)
 	/* previousLetter = clockSprite;*/
 	
 	thisLetter = malloc(sizeof(struct sprite));
+	thisLetter->numSpr = 5;
+	thisLetter->spr = malloc(sizeof(struct element) * 5);
 
-	thisLetter->sprite = SDL_CreateRGBSurface(flags, SCORE_WIDTH*5, SCORE_HEIGHT, bpp, rmask, gmask, bmask, amask);
-	thisLetter->replace = SDL_CreateRGBSurface(flags, SCORE_WIDTH*5, SCORE_HEIGHT, bpp, rmask, gmask, bmask, amask);
+//	thisLetter->sprite = SDL_CreateRGBSurface(flags, SCORE_WIDTH*5, SCORE_HEIGHT, bpp, rmask, gmask, bmask, amask);
+//	thisLetter->replace = SDL_CreateRGBSurface(flags, SCORE_WIDTH*5, SCORE_HEIGHT, bpp, rmask, gmask, bmask, amask);
 
 	for (i=0;i<5;i++){
 		if (i==0)
@@ -1301,14 +1334,18 @@ addScore(struct sprite** letters, SDL_Surface* screen)
 		else
 			fromrect.x = SCORE_WIDTH*11;
 		torect.x = i * SCORE_WIDTH;
-		SDL_BlitSurface(numberBank, &fromrect, thisLetter->sprite, &torect);
-		SDL_BlitSurface(numberBank, &blankRect, thisLetter->replace, &torect);
+		thisLetter->spr[i].t = numberBank;
+		thisLetter->spr[i].w = fromrect;
+		thisLetter->spr[i].x = torect.x;
+		thisLetter->spr[i].y = 0;
+//		SDL_BlitSurface(numberBank, &fromrect, thisLetter->sprite, &torect);
+//		SDL_BlitSurface(numberBank, &blankRect, thisLetter->replace, &torect);
 	}
 
 	thisLetter->x = SCORE_X;
 	thisLetter->y = SCORE_Y;
-	thisLetter->h = thisLetter->sprite->h;
-	thisLetter->w = thisLetter->sprite->w;
+	thisLetter->h = SCORE_HEIGHT;
+	thisLetter->w = SCORE_WIDTH*5;
 	thisLetter->toX = thisLetter->x;
 	thisLetter->toY = thisLetter->y;
 	thisLetter->next = NULL;
@@ -1338,7 +1375,7 @@ outputs: n/a
 ***********************************************************/
 static void
 newGame(struct node** head, struct dlb_node* dlbHead, 
-        SDL_Surface* screen, struct sprite** letters)
+        SDL_Renderer* screen, struct sprite** letters)
 {
     char guess[9];
     char remain[9];
@@ -1347,8 +1384,9 @@ newGame(struct node** head, struct dlb_node* dlbHead,
     int i;
 
 	/* show background */
-	strcpy(txt, language);
-	ShowBMP(strcat(txt,"images/background.bmp"),screen, 0,0);
+//	strcpy(txt, language);
+//	ShowBMP(strcat(txt,"images/background.bmp"),screen);
+	SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
 
 	destroyLetters(letters);
     assert(*letters == NULL);
@@ -1464,7 +1502,7 @@ outputs: n/a
 ***********************************************************/
 static void
 gameLoop(struct node **head, struct dlb_node *dlbHead, 
-         SDL_Surface *screen, struct sprite **letters)
+         SDL_Renderer *screen, struct sprite **letters)
 {
     int done=0;
     SDL_Event event;
@@ -1475,6 +1513,9 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
 	/* main game loop */
 	while (!done) {
+		SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
+		SDL_RenderClear(screen);
+		SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
 
 		if (winGame) {
 			stopTheClock = 1;
@@ -1502,7 +1543,6 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			strcpy(shuffle, SPACE_FILLED_STRING);
 			strcpy(answer, rootWord);
 			/*displayLetters(screen);*/
-			displayAnswerBoxes(*head, screen);
 			gamePaused = 1;
 			if (!stopTheClock){
 				stopTheClock = 1;
@@ -1515,10 +1555,10 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			/* move letters back down again */
 			clearWord(letters);
 			/* displayLetters(screen);*/
-			displayAnswerBoxes(*head, screen);
 
 			updateAnswers = 0;
 		}
+		displayAnswerBoxes(*head, screen);
 
 		if (startNewGame) {
 			/* move letters back down again */
@@ -1557,9 +1597,14 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			done = 1;
 		}
 
+//		SDL_RenderPresent(screen);
 		while (SDL_WaitEvent(&event)) {
 			if (event.type == SDL_USEREVENT) {
                 timer_delay = anySpritesMoving(letters) ? 10 : 100;
+				SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
+				SDL_RenderClear(screen);
+				SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+				displayAnswerBoxes(*head, screen);
                 moveSprites(&screen, letters, letterSpeed);
                 timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
                 break;
@@ -1572,6 +1617,10 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
                 done = 1;
                 break;
 			}
+			SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
+			SDL_RenderClear(screen);
+			SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+			displayAnswerBoxes(*head, screen);
             moveSprites(&screen, letters, letterSpeed);
         }
     }
@@ -1791,7 +1840,7 @@ main(int argc, char *argv[])
 {
     struct node* head = NULL;
     struct dlb_node* dlbHead = NULL;
-    SDL_Surface *screen;
+    SDL_Window *window;
     struct sprite* letters = NULL;
 
 	/* buffer sounds */
@@ -1833,14 +1882,16 @@ main(int argc, char *argv[])
 
 	atexit(SDL_Quit);
 
-	screen = SDL_SetVideoMode(800, 600, 16, SDL_HWSURFACE|SDL_DOUBLEBUF);
-	if (screen == NULL)
+	window = SDL_CreateWindow("Anagramarama", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, 0);
+	if (window == NULL)
 	{
 		Error("Unable to set 800x600 video: %s", SDL_GetError());
 		exit(1);
 	}
-
-	SDL_WM_SetCaption("Anagramarama", "ANAGRAMARAMA");
+	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
+	SDL_RenderPresent(renderer);
 
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
 		Error("unable to open audio!");
@@ -1851,18 +1902,28 @@ main(int argc, char *argv[])
 
 	/* cache in-game graphics */
 	strcpy(txt, language);
-	letterBank = SDL_LoadBMP(strcat(txt,"images/letterBank.bmp"));
+	SDL_Surface *backgroundSurf = IMG_Load(strcat(txt,"images/background.png"));
+	backgroundTex = SDL_CreateTextureFromSurface(renderer, backgroundSurf);
+	SDL_FreeSurface(backgroundSurf);
 	strcpy(txt, language);
-	smallLetterBank = SDL_LoadBMP(strcat(txt,"images/smallLetterBank.bmp"));
+	SDL_Surface *letterSurf = IMG_Load(strcat(txt,"images/letterBank.png"));
+	letterBank = SDL_CreateTextureFromSurface(renderer, letterSurf);
+	SDL_FreeSurface(letterSurf);
 	strcpy(txt, language);
-	numberBank = SDL_LoadBMP(strcat(txt,"images/numberBank.bmp"));
+	SDL_Surface *smallLetterSurf = IMG_Load(strcat(txt,"images/smallLetterBank.png"));
+	smallLetterBank = SDL_CreateTextureFromSurface(renderer, smallLetterSurf);
+	SDL_FreeSurface(smallLetterSurf);
+	strcpy(txt, language);
+	SDL_Surface *numberSurf = IMG_Load(strcat(txt,"images/numberBank.png"));
+	numberBank = SDL_CreateTextureFromSurface(renderer, numberSurf);
+	SDL_FreeSurface(numberSurf);
 	/* load locale specific configuration */
 	strcpy(txt, language);
 	loadConfig(strcat(txt, "config.ini"));
 
-	newGame(&head, dlbHead, screen, &letters);
+	newGame(&head, dlbHead, renderer, &letters);
 
-	gameLoop(&head, dlbHead, screen, &letters);
+	gameLoop(&head, dlbHead, renderer, &letters);
 
 	/* tidy up and exit */
 	if (audio_enabled)
@@ -1873,10 +1934,11 @@ main(int argc, char *argv[])
 	dlb_free(dlbHead);
 	destroyLetters(&letters);
 	destroyAnswers(&head);
-	SDL_FreeSurface(screen);
-	SDL_FreeSurface(letterBank);
-	SDL_FreeSurface(smallLetterBank);
-	SDL_FreeSurface(numberBank);
+	SDL_DestroyTexture(letterBank);
+	SDL_DestroyTexture(smallLetterBank);
+	SDL_DestroyTexture(numberBank);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
 	/*SDL_Quit(); */
 #ifdef GAMERZILLA
 	GamerzillaQuit();
