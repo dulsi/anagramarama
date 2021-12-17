@@ -137,6 +137,9 @@ int winGame = 0;
 
 int letterSpeed = LETTER_FAST;
 
+int fullscreen = 0;
+SDL_Window *window;
+
 /* Graphics cache */
 SDL_Texture* backgroundTex = NULL;
 SDL_Texture* letterBank = NULL;
@@ -635,7 +638,7 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
                     struct sprite** letters)
 {
     struct sprite* current = *letters;
-    char keyedLetter;
+    int keyedLetter;
 	int maxIndex = 0;
 
 	keyedLetter = event->key.keysym.sym;
@@ -647,6 +650,14 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 			case SDLK_ESCAPE:
 				/* clear has been pressed */
 				clearGuess = 1;
+				break;
+
+			case SDLK_F1:
+				if (fullscreen == 0)
+					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+				else
+					SDL_SetWindowFullscreen(window, 0);
+				fullscreen = !fullscreen;
 				break;
 
 			case SDLK_BACKSPACE:
@@ -1840,7 +1851,6 @@ main(int argc, char *argv[])
 {
     struct node* head = NULL;
     struct dlb_node* dlbHead = NULL;
-    SDL_Window *window;
     struct sprite* letters = NULL;
 
 	/* buffer sounds */
