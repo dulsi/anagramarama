@@ -901,7 +901,6 @@ updateScore(SDL_Renderer* screen)
 		torect.x = SCORE_WIDTH * i;
 		scoreSprite->spr[i].w = fromrect;
 		scoreSprite->spr[i].x = torect.x;
-//		SDL_BlitSurface(numberBank, &fromrect, scoreSprite->sprite, &torect);
 	}
 }
 
@@ -927,21 +926,12 @@ updateTime(SDL_Renderer* screen)
     int second_units;
     int second_tens;
     
-    SDL_Rect fromrect, torect, blankRect;
-
-	blankRect.x = CLOCK_WIDTH * 11;
-	blankRect.y = 0;
-	blankRect.w = CLOCK_WIDTH;
-	blankRect.h = CLOCK_HEIGHT;
+    SDL_Rect fromrect;
 
 	fromrect.x = 0;
 	fromrect.y = 0;
 	fromrect.w = CLOCK_WIDTH;
 	fromrect.h = CLOCK_HEIGHT;
-
-	torect.y = 0;
-	torect.w = CLOCK_WIDTH;
-	torect.h = CLOCK_HEIGHT;
 
 	thisTime = (int)((time_t)AVAILABLE_TIME - gameTime);
 	minutes = thisTime/60;
@@ -952,21 +942,13 @@ updateTime(SDL_Renderer* screen)
 	second_units = seconds-(second_tens*10);
 
 	fromrect.x = CLOCK_WIDTH * minute_tens;
-	torect.x = CLOCK_WIDTH * 0;
 	clockSprite->spr[0].w = fromrect;
-//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * minute_units;
-	torect.x = CLOCK_WIDTH * 1;
 	clockSprite->spr[1].w = fromrect;
-//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * second_tens;
-	torect.x = CLOCK_WIDTH * 3;
 	clockSprite->spr[3].w = fromrect;
-//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 	fromrect.x = CLOCK_WIDTH * second_units;
-	torect.x = CLOCK_WIDTH * 4;
 	clockSprite->spr[4].w = fromrect;
-//	SDL_BlitSurface(numberBank, &fromrect, clockSprite->sprite, &torect);
 
 	/* tick out the last 10 seconds */
 	if (thisTime<=10 && thisTime>0) {
@@ -1089,33 +1071,14 @@ buildLetters(struct sprite** letters, SDL_Renderer* screen)
     struct sprite *thisLetter = NULL, *previousLetter = NULL;
     int i;
     int len;
-    SDL_Rect rect, blankRect;
-//    Uint32 flags = SDL_SRCCOLORKEY;
-    Uint8 bpp;
-    Uint32 rmask, gmask, bmask, amask;
+    SDL_Rect rect;
     int index = 0;
-
-	blankRect.x = 27 * GAME_LETTER_WIDTH;
-	blankRect.y = 0;
-	blankRect.w = GAME_LETTER_WIDTH;
-	blankRect.h = GAME_LETTER_HEIGHT;
 
 	rect.y = 0;
 	rect.w = GAME_LETTER_WIDTH;
 	rect.h = GAME_LETTER_HEIGHT;
 
 	len = strlen(shuffle);
-
-//	if(screen->flags & SDL_SWSURFACE)
-//			flags |= SDL_SWSURFACE;
-//	if(screen->flags & SDL_HWSURFACE)
-//			flags |= SDL_HWSURFACE;
-
-//	bpp = screen->format->BitsPerPixel;
-//	rmask = screen->format->Rmask;
-//	gmask = screen->format->Gmask;
-//	bmask = screen->format->Bmask;
-//	amask = screen->format->Amask;
 
 	for (i=0; i < len; i++) {
 
@@ -1134,11 +1097,7 @@ buildLetters(struct sprite** letters, SDL_Renderer* screen)
 			thisLetter->spr[0].w = rect;
 			thisLetter->spr[0].x = 0;
 			thisLetter->spr[0].y = 0;
-//			thisLetter->sprite = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
-//			thisLetter->replace = SDL_CreateRGBSurface(flags, GAME_LETTER_WIDTH, GAME_LETTER_HEIGHT, bpp, rmask, gmask, bmask, amask);
 
-//			SDL_BlitSurface(letterBank, &rect, thisLetter->sprite, NULL);
-//			SDL_BlitSurface(letterBank, &blankRect, thisLetter->replace, NULL);
 			thisLetter->x = rand() % 799;/*i * (GAME_LETTER_WIDTH + GAME_LETTER_SPACE) + BOX_START_X;*/
 			thisLetter->y = rand() % 599; /* SHUFFLE_BOX_Y; */
 			thisLetter->letter = shuffle[i];
@@ -1184,36 +1143,13 @@ addClock(struct sprite** letters, SDL_Renderer* screen)
     struct sprite *previousLetter = NULL;
     struct sprite *current = *letters;
     int i;
-    SDL_Rect fromrect, torect, blankRect;
-//    Uint32 flags = SDL_SRCCOLORKEY;
-    Uint8 bpp;
-    Uint32 rmask, gmask, bmask, amask;
+    SDL_Rect fromrect;
     int index = 0;
     
-	blankRect.x = CLOCK_WIDTH * 11;
-	blankRect.y = 0;
-	blankRect.w = CLOCK_WIDTH;
-	blankRect.h = CLOCK_HEIGHT;
-
 	fromrect.x = 0;
 	fromrect.y = 0;
 	fromrect.w = CLOCK_WIDTH;
 	fromrect.h = CLOCK_HEIGHT;
-
-	torect.y = 0;
-	torect.w = CLOCK_WIDTH;
-	torect.h = CLOCK_HEIGHT;
-	
-//	if(screen->flags & SDL_SWSURFACE)
-//			flags |= SDL_SWSURFACE;
-//	if(screen->flags & SDL_HWSURFACE)
-//			flags |= SDL_HWSURFACE;
-
-//	bpp = screen->format->BitsPerPixel;
-//	rmask = screen->format->Rmask;
-//	gmask = screen->format->Gmask;
-//	bmask = screen->format->Bmask;
-//	amask = screen->format->Amask;
 
 	/* add the clock onto the end - so we don't slow letter processing any*/
 	while (current != NULL){
@@ -1222,9 +1158,6 @@ addClock(struct sprite** letters, SDL_Renderer* screen)
 	}
 
 	thisLetter=malloc(sizeof(struct sprite));
-
-//	thisLetter->sprite = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
-//	thisLetter->replace = SDL_CreateRGBSurface(flags, CLOCK_WIDTH*5, CLOCK_HEIGHT, bpp, rmask, gmask, bmask, amask);
 
 	thisLetter->spr = malloc(sizeof(struct element) * 5);
 	thisLetter->numSpr = 5;
@@ -1235,8 +1168,7 @@ addClock(struct sprite** letters, SDL_Renderer* screen)
 		thisLetter->spr[i].t = numberBank;
 		thisLetter->spr[i].y = 0;
 		
-		torect.x = CLOCK_WIDTH * i;
-		thisLetter->spr[i].x = torect.x;
+		thisLetter->spr[i].x = CLOCK_WIDTH * i;
 		switch(i){
 
 			case 1:
@@ -1254,10 +1186,6 @@ addClock(struct sprite** letters, SDL_Renderer* screen)
 				break;
 		}
 		thisLetter->spr[i].w = fromrect;
-
-//		SDL_BlitSurface(numberBank, &fromrect, thisLetter->sprite, &torect);
-
-//		SDL_BlitSurface(numberBank, &blankRect, thisLetter->replace, &torect);
 	}
 
 	thisLetter->x = CLOCK_X;

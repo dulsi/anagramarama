@@ -38,8 +38,6 @@ struct element {
 struct sprite {
 	struct element *spr;
 	int numSpr;
-//	SDL_Surface* sprite;
-//	SDL_Surface* replace;
 	char letter;
 	int x,y,w,h;
 	int toX, toY;

@@ -27,21 +27,6 @@ Contact Details: colm@coralquest.com
 
 /********************************************************************/
 static void
-setBackground(SDL_Renderer **screen, struct sprite **movie)
-{
-    SDL_Rect rect;
-
-	rect.x = (*movie)->x;
-	rect.y = (*movie)->y;
-	rect.w = (*movie)->w;
-	rect.h = (*movie)->h;
-
-	// copy the background into the replace buffer
-//	SDL_BlitSurface(*screen, &rect, (*movie)->replace, NULL);
-}
-
-/********************************************************************/
-static void
 showSprite(SDL_Renderer **screen, struct sprite **movie)
 {
     SDL_Rect rect;
@@ -59,24 +44,6 @@ showSprite(SDL_Renderer **screen, struct sprite **movie)
 		rect.h = (*movie)->spr[i].w.h;
 		SDL_RenderCopy(*screen, (*movie)->spr[i].t, &(*movie)->spr[i].w, &rect);
 	}
-//	SDL_SetColorKey((*movie)->sprite, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->sprite->format,255,0,255));
-//	SDL_BlitSurface((*movie)->sprite, NULL, *screen, &rect);
-}
-
-/********************************************************************/
-static void
-resetBackground(SDL_Renderer** screen, struct sprite** movie)
-{
-    SDL_Rect rect;
-
-	rect.x = (*movie)->x;
-	rect.y = (*movie)->y;
-	rect.w = (*movie)->w;
-	rect.h = (*movie)->h;
-
-	// put the screen back the way it was
-//	SDL_SetColorKey((*movie)->replace, SDL_SRCCOLORKEY, SDL_MapRGB((*movie)->replace->format,255,0,255));
-//	SDL_BlitSurface((*movie)->replace, NULL, *screen, &rect);
 }
 
 /********************************************************************/
@@ -138,8 +105,6 @@ moveSprite(SDL_Renderer** screen, struct sprite** movie, int letterSpeed)
 			}
 		}
 	}
-
-	setBackground(&(*screen), &(*movie));
 }
 
 /********************************************************************/
@@ -159,12 +124,6 @@ moveSprites(SDL_Renderer** screen, struct sprite** letters, int letterSpeed)
 		current=current->next;
 	}
 	SDL_RenderPresent(*screen);
-//	SDL_Flip(*screen);
-	current = *letters;
-	while(current!=NULL){
-		resetBackground(&(*screen), &current);
-		current= current->next;
-	}
 }
 
 /********************************************************************/
@@ -176,8 +135,6 @@ destroyLetters(struct sprite **letters)
 		struct sprite *tmp = current;
 		if (current->numSpr > 0)
 			free(current->spr);
-//		SDL_FreeSurface(current->sprite);
-//		SDL_FreeSurface(current->replace);
 		current = current->next;
 		free(tmp);
 	}
