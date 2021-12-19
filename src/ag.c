@@ -643,21 +643,21 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 
 	keyedLetter = event->key.keysym.sym;
 	
-	if (!gamePaused){
+
+	if (keyedLetter == SDLK_F1) {
+		if (fullscreen == 0)
+			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+		else
+			SDL_SetWindowFullscreen(window, 0);
+		fullscreen = !fullscreen;
+	}
+	else if (!gamePaused){
 
 		switch(keyedLetter){
 
 			case SDLK_ESCAPE:
 				/* clear has been pressed */
 				clearGuess = 1;
-				break;
-
-			case SDLK_F1:
-				if (fullscreen == 0)
-					SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-				else
-					SDL_SetWindowFullscreen(window, 0);
-				fullscreen = !fullscreen;
 				break;
 
 			case SDLK_BACKSPACE:
