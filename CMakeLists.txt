@@ -31,7 +31,7 @@ Include_Directories(
 	${GAMERZILLA_INCLUDE_DIRS}
 )
 
-file(GLOB SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag.c)
+file(GLOB SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag.c src/sdlscale.c)
 
 Add_Executable (anagramarama ${SOURCES})
 Target_Link_Libraries (

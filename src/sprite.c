@@ -24,6 +24,7 @@ Contact Details: colm@coralquest.com
 #include <string.h>
 #include <SDL.h>
 #include "sprite.h"
+#include "sdlscale.h"
 
 /********************************************************************/
 static void
@@ -42,7 +43,7 @@ showSprite(SDL_Renderer **screen, struct sprite **movie)
 		rect.y = (*movie)->y + (*movie)->spr[i].y;
 		rect.w = (*movie)->spr[i].w.w;
 		rect.h = (*movie)->spr[i].w.h;
-		SDL_RenderCopy(*screen, (*movie)->spr[i].t, &(*movie)->spr[i].w, &rect);
+		SDLScale_RenderCopy(*screen, (*movie)->spr[i].t, &(*movie)->spr[i].w, &rect);
 	}
 }
 

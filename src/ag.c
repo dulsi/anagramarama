@@ -77,6 +77,7 @@
 #include "linked.h"
 #include "sprite.h"
 #include "ag.h"
+#include "sdlscale.h"
 
 #ifdef GAMERZILLA
 #include <gamerzilla.h>
@@ -332,8 +333,12 @@ ShowBMP(const char *file, SDL_Renderer *screen)
 		Error("Couldn't load %s: %s\n", file, SDL_GetError());
 		return;
 	}
+	dest.x = 0;
+	dest.y = 0;
+	dest.w = 800;
+	dest.h = 600;
 	image = SDL_CreateTextureFromSurface(screen, imageSurf);
-	SDL_RenderCopy(screen, image, NULL, NULL);
+	SDLScale_RenderCopy(screen, image, NULL, &dest);
 
 	/* Update the changed portion of the screen */
 	SDL_FreeSurface(imageSurf);
@@ -407,10 +412,10 @@ displayAnswerBoxes(struct node* head, SDL_Renderer* screen)
 
 			numLetters++;
 			if (current->guessed) {
-				SDL_RenderCopy(screen, answerBoxKnown, NULL, &outerrect);
+				SDLScale_RenderCopy(screen, answerBoxKnown, NULL, &outerrect);
 			}
 			else {
-				SDL_RenderCopy(screen, answerBoxUnknown, NULL, &outerrect);
+				SDLScale_RenderCopy(screen, answerBoxUnknown, NULL, &outerrect);
 			}
 
 			innerrect.w = outerrect.w - 1;
@@ -425,7 +430,7 @@ displayAnswerBoxes(struct node* head, SDL_Renderer* screen)
 				letterBankRect.x = 10 * c;
 				innerrect.w = letterBankRect.w;
 				innerrect.h = letterBankRect.h;
-				SDL_RenderCopy(screen, smallLetterBank, &letterBankRect, &innerrect);
+				SDLScale_RenderCopy(screen, smallLetterBank, &letterBankRect, &innerrect);
 			}
 
 			outerrect.x += 18;
@@ -1325,7 +1330,12 @@ newGame(struct node** head, struct dlb_node* dlbHead,
 	/* show background */
 //	strcpy(txt, language);
 //	ShowBMP(strcat(txt,"images/background.bmp"),screen);
-	SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+	SDL_Rect dest;
+	dest.x = 0;
+	dest.y = 0;
+	dest.w = 800;
+	dest.h = 600;
+	SDLScale_RenderCopy(screen, backgroundTex, NULL, &dest);
 
 	destroyLetters(letters);
     assert(*letters == NULL);
@@ -1448,13 +1458,18 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
+	SDL_Rect dest;
+	dest.x = 0;
+	dest.y = 0;
+	dest.w = 800;
+	dest.h = 600;
     
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
 	/* main game loop */
 	while (!done) {
 		SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
 		SDL_RenderClear(screen);
-		SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+		SDLScale_RenderCopy(screen, backgroundTex, NULL, &dest);
 
 		if (winGame) {
 			stopTheClock = 1;
@@ -1542,12 +1557,13 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
                 timer_delay = anySpritesMoving(letters) ? 10 : 100;
 				SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
 				SDL_RenderClear(screen);
-				SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+				SDLScale_RenderCopy(screen, backgroundTex, NULL, &dest);
 				displayAnswerBoxes(*head, screen);
                 moveSprites(&screen, letters, letterSpeed);
                 timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
                 break;
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+				SDLScale_MouseEvent(&event);
                 clickDetect(event.button.button, event.button.x,
                             event.button.y, screen, *head, letters);
             } else if (event.type == SDL_KEYUP) {
@@ -1555,10 +1571,17 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
             } else if (event.type == SDL_QUIT) {
                 done = 1;
                 break;
+			} else if (event.type == SDL_WINDOWEVENT) {
+				if ((event.window.event == SDL_WINDOWEVENT_RESIZED) || (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED))
+				{
+					double scalew = event.window.data1 / 800.0;
+					double scaleh = event.window.data2 / 600.0;
+					SDLScale_Set(scalew, scaleh);
+				}
 			}
 			SDL_SetRenderDrawColor(screen, 0, 0, 0, 255);
 			SDL_RenderClear(screen);
-			SDL_RenderCopy(screen, backgroundTex, NULL, NULL);
+			SDLScale_RenderCopy(screen, backgroundTex, NULL, &dest);
 			displayAnswerBoxes(*head, screen);
             moveSprites(&screen, letters, letterSpeed);
         }
@@ -1820,7 +1843,7 @@ main(int argc, char *argv[])
 
 	atexit(SDL_Quit);
 
-	window = SDL_CreateWindow("Anagramarama", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, 0);
+	window = SDL_CreateWindow("Anagramarama", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_RESIZABLE);
 	if (window == NULL)
 	{
 		Error("Unable to set 800x600 video: %s", SDL_GetError());
