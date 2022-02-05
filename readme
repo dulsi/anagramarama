@@ -17,15 +17,17 @@ Version 0.1 -   still needs a high score table and some
 Version 0.2 -   Added keyboard support and the scrabble wordlist
 
 Version 0.3 -   Added internationalisation, portuguese is the first available
-                language, many more to follow!
+		language, many more to follow!
 
 Version 0.4 -   Numerous bug-fixes and French support.
 
 Version 0.5 -   Italian translation (by Michele Bucelli)
-  Added achievements with Gamerzilla.
+		Added achievements with Gamerzilla.
 
 Version 0.6 -   Switched to SDL2.
-  F1 now switches to fullscreen.
+		F1 now switches to fullscreen.
+
+Version 0.7 -   Enable resizing of the window.
 
 License
 

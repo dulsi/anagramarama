@@ -1,5 +1,5 @@
 Name:           anagramarama
-Version:        0.6
+Version:        0.7
 Release:        1%{?dist}
 Summary:        Anagram puzzle game
 # Almost all is GPLv2+ with some graphics being CC-BY-SA
@@ -57,6 +57,9 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{name}.metain
 
 
 %changelog
+* Sat Feb 05 2022 Dennis Payne <dulsi@identicalsoftware.com> - 0.7-1
+- Newest release
+
 * Thu Dec 16 2021 Dennis Payne <dulsi@identicalsoftware.com> - 0.6-1
 - Newest release
 
