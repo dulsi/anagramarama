@@ -34,7 +34,13 @@
   </provides>
 
   <releases>
+    <release version="0.7" date="2022-02-05" />
+    <release version="0.6" date="2021-12-16" />
+    <release version="0.5" date="2021-08-06" />
     <release version="0.4" date="2010-08-24" />
+    <release version="0.3" date="2010-06-15" />
+    <release version="0.2" date="2010-06-15" />
+    <release version="0.1" date="2010-06-15" />
   </releases>
 
   <content_rating type="oars-1.1" />
