@@ -297,7 +297,7 @@ inputs:   n/a
 outputs:  n/a
 ***********************************************************/
 static void
-clearSoundBuffer()
+clearSoundBuffer(void)
 {
     struct sound* currentSound = soundCache, *previousSound = NULL;
 
@@ -1890,7 +1890,7 @@ main(int argc, char *argv[])
 	if (audio_enabled)
 	{
 		Mix_CloseAudio();
-		clearSoundBuffer(&soundCache);
+		clearSoundBuffer();
 	}
 	dlb_free(dlbHead);
 	destroyLetters(&letters);
