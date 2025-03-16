@@ -4,6 +4,9 @@
   <id>com.identicalsoftware.anagramarama</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-2.0+</project_license>
+  <developer id="com.identicalsoftware">
+    <name>Identical Games</name>
+  </developer>
   <name>Anagramarama</name>
   <summary>Make words from a jumble of letters</summary>
 
