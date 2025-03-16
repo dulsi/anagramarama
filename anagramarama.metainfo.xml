@@ -24,9 +24,11 @@
   <screenshots>
     <screenshot type="default">
       <image>http://identicalsoftware.com/anagramarama/screenshot1.png</image>
+      <caption>Still over four minutes left.</caption>
     </screenshot>
     <screenshot>
       <image>http://identicalsoftware.com/anagramarama/screenshot2.png</image>
+      <caption>Game Over</caption>
     </screenshot>
   </screenshots>
 
