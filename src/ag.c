@@ -1890,7 +1890,7 @@ main(int argc, char *argv[])
 	if (audio_enabled)
 	{
 		Mix_CloseAudio();
-		clearSoundBuffer(&soundCache);
+		clearSoundBuffer();
 	}
 	dlb_free(dlbHead);
 	destroyLetters(&letters);
