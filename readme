@@ -29,6 +29,8 @@ Version 0.6 -   Switched to SDL2.
 
 Version 0.7 -   Enable resizing of the window.
 
+Version 0.8 -   Fix compile errors.
+
 License
 
 Copyright (c) 2003-2010 Colm Gallagher et al.
