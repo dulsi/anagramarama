@@ -2,8 +2,8 @@ Name:           anagramarama
 Version:        0.8
 Release:        %autorelease
 Summary:        Anagram puzzle game
-# Almost all is GPLv2+ with some graphics being CC-BY-SA
-License:        GPLv2+ and CC-BY-SA
+# Almost all is GPLv2+ with some graphics being CC-BY-3.0
+License:        GPL-2.0-or-later AND CC-BY-3.0
 URL:            http://identicalsoftware.com/anagramarama/
 
 Source0:        %{url}/%{name}-%{version}.tgz
