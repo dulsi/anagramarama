@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2021 Dennis Payne <dulsi@identicalsoftware.com> -->
 <component type="desktop-application">
-  <id>anagramarama</id>
+  <id>com.identicalsoftware.anagramarama</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-2.0+</project_license>
+  <developer id="com.identicalsoftware">
+    <name>Identical Games</name>
+  </developer>
   <name>Anagramarama</name>
   <summary>Make words from a jumble of letters</summary>
 
@@ -20,21 +23,29 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>http://www.identicalsoftware.com/angramarama/screenshot1.png</image>
+      <image>http://identicalsoftware.com/anagramarama/screenshot1.png</image>
+      <caption>Still over four minutes left.</caption>
     </screenshot>
     <screenshot>
-      <image>http://www.identicalsoftware.com/angramarama/screenshot2.png</image>
+      <image>http://identicalsoftware.com/anagramarama/screenshot2.png</image>
+      <caption>Game Over</caption>
     </screenshot>
   </screenshots>
 
-  <url type="homepage">http://www.identicalsoftware.com/angramarama/</url>
+  <url type="homepage">http://identicalsoftware.com/anagramarama/</url>
 
   <provides>
     <binary>anagramarama</binary>
   </provides>
 
   <releases>
+    <release version="0.7" date="2022-02-05" />
+    <release version="0.6" date="2021-12-16" />
+    <release version="0.5" date="2021-08-06" />
     <release version="0.4" date="2010-08-24" />
+    <release version="0.3" date="2010-06-15" />
+    <release version="0.2" date="2010-06-15" />
+    <release version="0.1" date="2010-06-15" />
   </releases>
 
   <content_rating type="oars-1.1" />
