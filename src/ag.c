@@ -297,7 +297,7 @@ inputs:   n/a
 outputs:  n/a
 ***********************************************************/
 static void
-clearSoundBuffer()
+clearSoundBuffer(void)
 {
     struct sound* currentSound = soundCache, *previousSound = NULL;
 
