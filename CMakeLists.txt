@@ -1,10 +1,12 @@
 Project (anagramarama)
-CMake_Minimum_Required (VERSION 3.1)
+CMake_Minimum_Required (VERSION 3.1...4.0)
 
-Set (BINDIR "bin" CACHE STRING "Where to install binaries")
-Set (DATAROOTDIR "${CMAKE_INSTALL_PREFIX}/share" CACHE STRING "Sets the root of data directories to a non-default location")
-Set (ICONDIR "${DATAROOTDIR}/icons" CACHE STRING "Sets the icon directory for desktop entry to a non-default location.")
-Set (DESKTOPDIR "${DATAROOTDIR}/applications" CACHE STRING "Sets the desktop file directory for desktop entry to a non-default location.")
+include(GNUInstallDirs)
+
+Set (BINDIR "${CMAKE_INSTALL_BINDIR}" CACHE PATH "Where to install binaries")
+Set (DATAROOTDIR "${CMAKE_INSTALL_DATAROOTDIR}" CACHE PATH "Sets the root of data directories to a non-default location")
+Set (ICONDIR "${DATAROOTDIR}/icons" CACHE PATH "Sets the icon directory for desktop entry to a non-default location.")
+Set (DESKTOPDIR "${DATAROOTDIR}/applications" CACHE PATH "Sets the desktop file directory for desktop entry to a non-default location.")
 
 include(FindPkgConfig)
 pkg_search_module(SDL2 REQUIRED sdl2)
@@ -21,7 +23,13 @@ if (NOT APPLE)
     endif()
 endif()
 
-add_definitions(-DDATA_PATH=\"${DATAROOTDIR}/anagramarama\")
+
+if(CMAKE_VERSION VERSION_LESS 3.20)
+    set(dir DATAROOTDIR)
+endif()
+GNUInstallDirs_get_absolute_install_dir(DATAROOTDIR_FULL DATAROOTDIR DATAROOTDIR)
+
+add_definitions(-DDATA_PATH=\"${DATAROOTDIR_FULL}/anagramarama\")
 
 #Add the include directories of the (found) libraries.
 Include_Directories(
