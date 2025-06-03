@@ -1,5 +1,6 @@
-Project (anagramarama)
 CMake_Minimum_Required (VERSION 3.1...4.0)
+
+Project (anagramarama)
 
 include(GNUInstallDirs)
 
