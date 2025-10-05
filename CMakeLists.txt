@@ -1,10 +1,12 @@
-CMake_Minimum_Required (VERSION 3.10)
+CMake_Minimum_Required (VERSION 3.10...4.0)
 Project (anagramarama)
 
-Set (BINDIR "bin" CACHE STRING "Where to install binaries")
-Set (DATAROOTDIR "${CMAKE_INSTALL_PREFIX}/share" CACHE STRING "Sets the root of data directories to a non-default location")
-Set (ICONDIR "${DATAROOTDIR}/icons" CACHE STRING "Sets the icon directory for desktop entry to a non-default location.")
-Set (DESKTOPDIR "${DATAROOTDIR}/applications" CACHE STRING "Sets the desktop file directory for desktop entry to a non-default location.")
+include(GNUInstallDirs)
+
+Set (BINDIR "${CMAKE_INSTALL_BINDIR}" CACHE PATH "Where to install binaries")
+Set (DATAROOTDIR "${CMAKE_INSTALL_DATAROOTDIR}" CACHE PATH "Sets the root of data directories to a non-default location")
+Set (ICONDIR "${DATAROOTDIR}/icons" CACHE PATH "Sets the icon directory for desktop entry to a non-default location.")
+Set (DESKTOPDIR "${DATAROOTDIR}/applications" CACHE PATH "Sets the desktop file directory for desktop entry to a non-default location.")
 
 # Find SDL2 packages
 find_package(SDL2 REQUIRED COMPONENTS SDL2)
@@ -22,8 +24,13 @@ if (NOT APPLE)
     endif()
 endif()
 
-#add_definitions(-DDATA_PATH=\"${DATAROOTDIR}/anagramarama\")
-add_definitions(-DDATA_PATH="${DATAROOTDIR}/anagramarama")
+if(CMAKE_VERSION VERSION_LESS 3.20)
+    set(dir DATAROOTDIR)
+endif()
+GNUInstallDirs_get_absolute_install_dir(DATAROOTDIR_FULL DATAROOTDIR DATAROOTDIR)
+
+#add_definitions(-DDATA_PATH=\"${DATAROOTDIR_FULL}/anagramarama\")
+add_definitions(-DDATA_PATH="${DATAROOTDIR_FULL}/anagramarama")
 
 #Add the include directories of the (found) libraries.
 Include_Directories(
@@ -38,7 +45,7 @@ file(GLOB SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag.c src
 Add_Executable (anagramarama ${SOURCES})
 
 # link lib
-target_link_libraries(anagramarama PRIVATE SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer ${GAMERZILLA_LIBRARIES})
+target_link_libraries(anagramarama PRIVATE SDL2::SDL2main SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer ${GAMERZILLA_LIBRARIES})
 
 #file(GLOB TESTAG_SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag_test.c)
 
