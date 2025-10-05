@@ -31,6 +31,8 @@ Version 0.7 -   Enable resizing of the window.
 
 Version 0.8 -   Fix compile errors.
 
+Version 0.9 -   Support cmake 4 and better MacOS compilation.
+
 License
 
 Copyright (c) 2003-2010 Colm Gallagher et al.

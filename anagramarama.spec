@@ -1,5 +1,5 @@
 Name:           anagramarama
-Version:        0.8
+Version:        0.9
 Release:        %autorelease
 Summary:        Anagram puzzle game
 # Almost all is GPLv2+ with some graphics being CC-BY-3.0
