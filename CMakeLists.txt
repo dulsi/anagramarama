@@ -1,18 +1,19 @@
+CMake_Minimum_Required (VERSION 3.10)
 Project (anagramarama)
-CMake_Minimum_Required (VERSION 3.1)
 
 Set (BINDIR "bin" CACHE STRING "Where to install binaries")
 Set (DATAROOTDIR "${CMAKE_INSTALL_PREFIX}/share" CACHE STRING "Sets the root of data directories to a non-default location")
 Set (ICONDIR "${DATAROOTDIR}/icons" CACHE STRING "Sets the icon directory for desktop entry to a non-default location.")
 Set (DESKTOPDIR "${DATAROOTDIR}/applications" CACHE STRING "Sets the desktop file directory for desktop entry to a non-default location.")
 
-include(FindPkgConfig)
-pkg_search_module(SDL2 REQUIRED sdl2)
-pkg_search_module(SDL2_MIXER REQUIRED SDL2_mixer)
-pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
+# Find SDL2 packages
+find_package(SDL2 REQUIRED COMPONENTS SDL2)
+find_package(SDL2_image REQUIRED)
+find_package(SDL2_mixer REQUIRED)
 
 # Find LibGamerzilla library
 if (NOT APPLE)
+    include(FindPkgConfig)
     pkg_search_module(GAMERZILLA OPTIONAL gamerzilla)
 
     if (GAMERZILLA_LIBRARIES)
@@ -21,7 +22,8 @@ if (NOT APPLE)
     endif()
 endif()
 
-add_definitions(-DDATA_PATH=\"${DATAROOTDIR}/anagramarama\")
+#add_definitions(-DDATA_PATH=\"${DATAROOTDIR}/anagramarama\")
+add_definitions(-DDATA_PATH="${DATAROOTDIR}/anagramarama")
 
 #Add the include directories of the (found) libraries.
 Include_Directories(
@@ -34,13 +36,9 @@ Include_Directories(
 file(GLOB SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag.c src/sdlscale.c)
 
 Add_Executable (anagramarama ${SOURCES})
-Target_Link_Libraries (
-	anagramarama
-	${SDL2_LIBRARIES}
-	${SDL2_MIXER_LIBRARIES}
-	${SDL2_IMAGE_LIBRARIES}
-	${GAMERZILLA_LIBRARIES}
-)
+
+# link lib
+target_link_libraries(anagramarama PRIVATE SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer ${GAMERZILLA_LIBRARIES})
 
 #file(GLOB TESTAG_SOURCES src/dlb.c src/linked.c src/sprite.c src/ag_core.c src/ag_test.c)
 
