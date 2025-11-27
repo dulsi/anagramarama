@@ -326,7 +326,7 @@ ShowBMP(const char *file, SDL_Renderer *screen)
 	/* Load the BMP file into a surface */
 	imageSurf = SDL_LoadBMP(file);
 	if ( imageSurf == NULL ) {
-		Error("Couldn't load %s: %s\n", file, SDL_GetError());
+		Error("Could not load \"%s\": %s", file, SDL_GetError());
 		return;
 	}
 	dest.x = 0;
@@ -495,7 +495,7 @@ checkGuess(char* answer, struct node* head)
 		test[i] = answer[i];
 	}
 #ifdef DEBUG
-	Debug("check guess len:%d answer:'%s' test:'%s'", len, answer, test);
+	Debug("Checking guess: len == %d; answer == \"%s\"; test == \"%s\".", len, answer, test);
 #endif
 
 	while (current != NULL) {
@@ -1236,7 +1236,7 @@ addScore(struct sprite** letters, SDL_Renderer* screen)
 synopsis: do all of the initialisation for a new game:
 		  build the screen
 		  get a random word and generate anagrams
-		  (must get less than 66 anagrams to display on screen)
+		  (must get no more than 66 anagrams to display on screen)
 		  initialise all the game control flags
 
 inputs: head - first node in the answers list (in/out)
@@ -1286,18 +1286,18 @@ newGame(struct node** head, struct dlb_node* dlbHead,
 		ag(head, dlbHead, guess, remain);
 
 		answersSought = Length(*head);
-		happy = ((answersSought <= 77) && (answersSought >= 6));
+		happy = ((answersSought <= 66) && (answersSought >= 6));
 
 #ifdef DEBUG
 		if (!happy) {
-			Debug("Too Many Answers!  word: %s, answers: %i",
+			Debug("Invalid number of answers! Candidate word \"%s\", %i answers.",
 				rootWord, answersSought);
 		}
 #endif
 	}
 
 #ifdef DEBUG
-	Debug("Selected word: %s, answers: %i", rootWord, answersSought);
+	Debug("Selected word \"%s\", %i answers.", rootWord, answersSought);
 #endif
 
 	/* now we have a good set of words - sort them alphabetically */
@@ -1520,7 +1520,9 @@ is_valid_locale(const char *path)
 	strcat(buffer, "wordlist.txt");
 
 	if ((fp = fopen(buffer, "r")) != NULL) fclose(fp);
-	Debug("testing %s: %s", buffer, (fp == NULL)?"failed":"present");
+#ifdef DEBUG
+	Debug("Testing \"%s\": %s.", buffer, (fp == NULL) ? "failed" : "present");
+#endif
 	return (fp != NULL);
 }
 
@@ -1553,7 +1555,9 @@ loadConfig(const char *path)
 	FILE *fp = NULL;
 	char line[80], *p;
 	if ((fp = fopen(path, "r")) != NULL) {
-		Debug("loading configuration from %s", path);
+#ifdef DEBUG
+		Debug("Loading configuration from \"%s\".", path);
+#endif
 		while (!feof(fp)) {
 			if ((p = fgets(line, sizeof(line), fp)) != NULL) {
 				int i;
@@ -1621,7 +1625,9 @@ init_locale_prefix(char *prefix)
 		GetLocaleInfo(lcid, LOCALE_SISO3166CTRYNAME, 
 			language + strlen(language), sizeof(language));
 
-		Debug("locale %s", language);
+#ifdef DEBUG
+		Debug("Locale \"%s\".", language);
+#endif
 		if (is_valid_locale(language)) return 1;
 
 		*p = 0;
@@ -1748,12 +1754,12 @@ main(int argc, char *argv[])
 	/* create dictionary */
 	strcpy(txt, language);
 	if (!dlb_create(&dlbHead, strcat(txt, "wordlist.txt"))) {
-		Error("failed to open word list file");
+		Error("Failed to open \"%s\"!", txt);
 		exit(1);
 	}
 
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO|SDL_INIT_TIMER) < 0){
-		Error("Unable to init SDL: %s", SDL_GetError());
+		Error("Unable to initialise SDL: %s", SDL_GetError());
 		exit(1);
 	}
 
@@ -1761,7 +1767,7 @@ main(int argc, char *argv[])
 
 	window = SDL_CreateWindow("Anagramarama", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_RESIZABLE);
 	if (window == NULL) {
-		Error("Unable to set 800x600 video: %s", SDL_GetError());
+		Error("Unable to set the 800x600 video: %s", SDL_GetError());
 		exit(1);
 	}
 	SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
@@ -1770,7 +1776,7 @@ main(int argc, char *argv[])
 	SDL_RenderPresent(renderer);
 
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
-		Error("unable to open audio!");
+		Error("Unable to open the audio!");
 		audio_enabled = 0;
 	}
 	else bufferSounds(&soundCache);
