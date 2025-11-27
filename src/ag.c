@@ -1656,16 +1656,14 @@ init_locale(int argc, char *argv[])
 {
 	char *lang = NULL, *p = NULL;
 
+	strcpy(language, basePath);
 	strcpy(language,"i18n/");
 	if (argc == 2) {
 		strcat(language, argv[1]);
 		if (is_valid_locale(language)) return;
 	}
 
-#ifdef DATA_PATH
-	if (init_locale_prefix(DATA_PATH)) return;
-#endif
-	init_locale_prefix("");
+	init_locale_prefix(basePath);
 }
 
 static char *
@@ -1732,14 +1730,14 @@ main(int argc, char *argv[])
 	int audio_channels = 1;
 	int audio_buffers = 256;
 
+	get_base_path();
 #ifdef GAMERZILLA
 	{
 		char jsonfile[512];
-		char *basepath = get_base_path();
 		GamerzillaStart(false, get_user_path());
-		strcpy(jsonfile, basepath);
+		strcpy(jsonfile, basePath);
 		strcat(jsonfile, "gamerzilla/anagramarama.game");
-		gameId = GamerzillaSetGameFromFile(jsonfile, basepath);
+		gameId = GamerzillaSetGameFromFile(jsonfile, basePath);
 	}
 #endif
 
