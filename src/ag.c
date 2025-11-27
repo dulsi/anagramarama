@@ -93,6 +93,9 @@ void ag(struct node **head, struct dlb_node *dlbHead,
 void getRandomWord(char *output, size_t length);
 int nextBlank(const char *string);
 
+static int whereinstr(const char *s, char c);
+static int configAlphabet(const char *line);
+
 enum Hotboxes { BoxSolve, BoxNew, BoxQuit, BoxShuffle, BoxEnter, BoxClear };
 const char *BoxNames[] = {
 	"solve", "new", "quit", "shuffle", "enter", "clear"
@@ -105,15 +108,19 @@ Box hotbox[6] = {
 	{ 690, 254, 40, 35 }, /* BoxEnter */
 	{ 690, 304, 40, 40 } /* BoxClear */
 };
+const char alphabetName[] = "alphabet";
 
 /* module level variables for game control */
 char shuffle[8] = SPACE_FILLED_CHARS;
 char answer[8]  = SPACE_FILLED_CHARS;
+char alphabet[49] = "abcdefghijklmnopqrstuvwxyz"; // potentially corresponds up to 48 distinct keys
+
 char language[256];
 char userPath[256];
 char basePath[256];
 char txt[256];
 char rootWord[9];
+
 int updateAnswers = 0;
 int startNewGame = 0;
 int solvePuzzle = 0;
@@ -359,7 +366,7 @@ displayAnswerBoxes(struct node* head, SDL_Renderer* screen)
 {
 	struct node* current = head;
 	SDL_Rect outerrect, innerrect, letterBankRect;
-	int i;
+	int i, c;
 	int numWords = 0;
 	int acrossOffset = 70;
 	int numLetters = 0;
@@ -413,10 +420,12 @@ displayAnswerBoxes(struct node* head, SDL_Renderer* screen)
 			innerrect.y = outerrect.y + 1;
 
 			if (current->found) {
-				int c = (int)(current->anagram[i] - 'a');
-				assert(c > -1);
+				c = whereinstr(alphabet, current->anagram[i]);
+				assert(c != -1);
+				letterBankRect.x = c % 26 * 10;
+				letterBankRect.y = c / 26 * 16;
+
 				innerrect.x += 2;
-				letterBankRect.x = 10 * c;
 				innerrect.w = letterBankRect.w;
 				innerrect.h = letterBankRect.h;
 				SDLScale_RenderCopy(screen, smallLetterBank, &letterBankRect, &innerrect);
@@ -626,10 +635,18 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 	struct sprite** letters)
 {
 	struct sprite* current = *letters;
-	int keyedLetter;
+	SDL_Keycode keyedLetter;
 	int maxIndex = 0;
 
-	keyedLetter = event->key.keysym.sym;
+	/* SDL_Event->key.keysym.sym yields a symbol depending on the initial keyboard */
+	/* layout! Switching the keyboard layout during the game has no effect even when */
+	/* SDL_TextInputEvent is emitted. Since keys have to be handled regardless of */
+	/* a keyboard layout, scancodes should be used instead of "raw" keycodes. */
+	keyedLetter = SDL_GetKeyFromName(SDL_GetScancodeName(event->key.keysym.scancode));
+#ifdef DEBUG
+	Debug("The processed keyed letter is \'%c\' (keycode %x).", (char) keyedLetter, (int) keyedLetter);
+#endif
+
 	if (keyedLetter == SDLK_F1) {
 		if (fullscreen == 0) SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 		else SDL_SetWindowFullscreen(window, 0);
@@ -657,6 +674,7 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 					current->toX = nextBlankPosition(SHUFFLE, &current->index);
 					current->toY = SHUFFLE_BOX_Y;
 					current->box = SHUFFLE;
+
 					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-answer"), 0);
 					break;
 				}
@@ -670,11 +688,11 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 			checkGuess(answer, head);
 			break;
 
-		case ' ':
+		case SDLK_SPACE:
 			/* shuffle has been pressed */
 			shuffleRemaining = 1;
-			if (audio_enabled)
-				Mix_PlayChannel(-1, getSound("shuffle"),0);
+
+			if (audio_enabled) Mix_PlayChannel(-1, getSound("shuffle"),0);
 			break;
 
 		default:
@@ -682,12 +700,12 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 			/* selected letter in SHUFFLE */
 			while (current!=NULL&&current->box!=CONTROLS){
 				if (current->box == SHUFFLE){
-					if (current->letter == keyedLetter){
+					if (current->letter == (char) keyedLetter){
 						current->toX = nextBlankPosition(ANSWER, &current->index);
 						current->toY = ANSWER_BOX_Y;
 						current->box = ANSWER;
-						if (audio_enabled)
-							Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
+
+						if (audio_enabled) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
 						break;
 					}
 				}
@@ -749,11 +767,13 @@ clickDetect(int button, int x, int y, SDL_Renderer *screen,
 					current->toX = nextBlankPosition(ANSWER, &current->index);
 					current->toY = ANSWER_BOX_Y;
 					current->box = ANSWER;
+
 					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
 				} else{
 					current->toX = nextBlankPosition(SHUFFLE, &current->index);
 					current->toY = SHUFFLE_BOX_Y;
 					current->box = SHUFFLE;
+
 					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-answer"), 0);
 				}
 				break;
@@ -778,6 +798,7 @@ clickDetect(int button, int x, int y, SDL_Renderer *screen,
 		if (IsInside(hotbox[BoxShuffle], x, y)) {
 			/* shuffle has been pressed */
 			shuffleRemaining = 1;
+
 			if (audio_enabled) Mix_PlayChannel(-1, getSound("shuffle"),0);
 		}
 	}
@@ -943,16 +964,17 @@ synopsis: returns the index of a specific letter in a string
 inputs: string - the string to check
 		letter - the letter to return
 
-outputs: the index of the letter
+outputs: retval : the index of the letter
+		 or -1 if it is not found
 ***********************************************************/
 static int
 whereinstr(const char *s, char c)
 {
-	const char *p;
-	if ((p = strchr(s, c)) != NULL) {
-		return (p - s);
+	const char *p = strchr(s, c);
+	if (p != NULL) {
+		return (int) (p - s);
 	}
-	return 0;
+	return -1;
 }
 
 /***********************************************************
@@ -1020,8 +1042,7 @@ void
 buildLetters(struct sprite** letters, SDL_Renderer* screen)
 {
 	struct sprite *thisLetter = NULL, *previousLetter = NULL;
-	int i;
-	int len;
+	int i, len, chr;
 	SDL_Rect rect;
 	int index = 0;
 
@@ -1036,9 +1057,11 @@ buildLetters(struct sprite** letters, SDL_Renderer* screen)
 
 		/* determine which letter we're wanting and load it from the letterBank */
 		if (shuffle[i] != ASCII_SPACE && shuffle[i] != SPACE_CHAR) {
-			int chr = (int)(shuffle[i] - 'a');
-			assert(chr > -1);
-			rect.x = chr * GAME_LETTER_WIDTH;
+			chr = whereinstr(alphabet, shuffle[i]);
+			assert(chr != -1);
+			rect.x = chr % 26 * GAME_LETTER_WIDTH;
+			rect.y = chr / 26 * GAME_LETTER_HEIGHT;
+
 			thisLetter->numSpr = 1;
 			thisLetter->spr = malloc(sizeof(struct element));
 			thisLetter->spr[0].t = letterBank;
@@ -1301,7 +1324,7 @@ newGame(struct node** head, struct dlb_node* dlbHead,
 #endif
 
 	/* now we have a good set of words - sort them alphabetically */
-	sort(head);
+	sort(head, alphabet);
 
 	for (i = bigWordLen; i < 7; i++){
 		remain[i] = SPACE_CHAR;
@@ -1545,32 +1568,42 @@ configBox(Box *pbox, const char *line)
 }
 
 /*
- * read any locale-specific configuration information from an ini
+ * Read any locale-specific configuration information from an
  * ini file. This can reconfigure the positions of the boxes to account
- * for different word sizes or alternative background layouts
+ * for different word sizes or alternative background layouts.
+ * Also, this can reconfigure the alphabet to account
+ * for different letter sets and keyboard layouts.
  */
 static void
 loadConfig(const char *path)
 {
 	FILE *fp = NULL;
-	char line[80], *p;
+	char line[109], *p;
+	int i, cmp_res;
+	int bn_size = sizeof(BoxNames) / sizeof(BoxNames[0]);
+
 	if ((fp = fopen(path, "r")) != NULL) {
 #ifdef DEBUG
 		Debug("Loading configuration from \"%s\".", path);
 #endif
 		while (!feof(fp)) {
-			if ((p = fgets(line, sizeof(line), fp)) != NULL) {
-				int i;
-				while (*p && isspace(*p))
-					++p;
-				if (*p == 0 || *p == ';')
-					continue;
+			p = fgets(line, sizeof(line), fp);
+			if (p != NULL) {
+				while (*p && isspace(*p)) ++p;
+				if (*p == '\0' || *p == ';') continue;
 
-				for (i = 0; i < sizeof(BoxNames)/sizeof(BoxNames[0]); ++i) {
-					if (strncmp(BoxNames[i], p, strlen(BoxNames[i])) == 0) {
+				for (i = 0, cmp_res = -1; i < bn_size; ++i) {
+					cmp_res = strncmp(BoxNames[i], p, strlen(BoxNames[i]));
+					if (cmp_res == 0) {
 						configBox(&hotbox[i], p);
 						break;
 					}
+				}
+				if (cmp_res == 0) continue;
+
+				cmp_res = strncmp(alphabetName, p, strlen(alphabetName));
+				if (cmp_res == 0) {
+					configAlphabet(p);
 				}
 			}
 		}
@@ -1707,6 +1740,38 @@ get_base_path()
 	return basePath;
 }
 
+/*
+ * Parse a config line, e.g. "alphabet = q we rty".
+ */
+static int
+configAlphabet(const char *line)
+{
+	char *p = strchr(line, '=');
+
+	if (p == NULL) return 0;
+
+	char new_ab[sizeof(alphabet)];
+	char *c = new_ab;
+
+	/* Since possible spaces are not separate letters, trim them. */
+	for (++p; *p; ++p) {
+		if (!isspace(*p)) {
+			*c = *p;
+			++c;
+		}
+	}
+	*c = '\0';
+
+	/* Reject a new alphabet if it contains less than 2 distinct letters. */
+	if ((int) (c - new_ab) < 2) return 0;
+
+	strcpy(alphabet, new_ab);
+#ifdef DEBUG
+	Debug("Configured new alphabet: \"%s\" (%d letters).", alphabet, strlen(alphabet));
+#endif
+	return 1;
+}
+
 /***********************************************************
 synopsis: initialise graphics and sound, build the dictionary
 		  cache the images and start the game loop
@@ -1756,12 +1821,20 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO|SDL_INIT_TIMER) < 0){
+	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0){
 		Error("Unable to initialise SDL: %s", SDL_GetError());
 		exit(1);
 	}
 
 	atexit(SDL_Quit);
+
+	/* On desktop platforms, SDL_StartTextInput() is implicitly called on SDL */
+	/* video subsystem initialisation. This causes SDL_TextInputEvent and */
+	/* SDL_TextEditingEvent to begin emitting. */
+#ifdef DEBUG
+	Debug("The SDL text input was initially %s.", (SDL_IsTextInputActive() == SDL_TRUE) ? "active" : "inactive");
+#endif
+	SDL_StopTextInput();
 
 	window = SDL_CreateWindow("Anagramarama", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_RESIZABLE);
 	if (window == NULL) {
