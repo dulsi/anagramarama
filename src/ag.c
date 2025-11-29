@@ -95,6 +95,8 @@ int nextBlank(const char *string);
 
 static int whereinstr(const char *s, char c);
 static int configAlphabet(const char *line);
+static int trunc_locale_id(char *l_id_start);
+static int detect_valid_locale_variant(char *language_tip, const char *l_id);
 
 enum Hotboxes { BoxSolve, BoxNew, BoxQuit, BoxShuffle, BoxEnter, BoxClear };
 const char *BoxNames[] = {
@@ -1535,18 +1537,29 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 static int
 is_valid_locale(const char *path)
 {
-	FILE *fp = NULL;
-	char buffer[260];
+	if (path == NULL) return 0;
 
-	strcpy(buffer, path);
-	if (buffer[strlen(buffer)-1] != '/') strcat(buffer, "/");
-	strcat(buffer, "wordlist.txt");
+	FILE *fp;
+	char *p_s, *p_end;
+	int fopen_res;
+	const char wl_token[] = "wordlist.txt", s[] = "/";
 
-	if ((fp = fopen(buffer, "r")) != NULL) fclose(fp);
+	strcpy(txt, path);
+	p_s = strrchr(txt, '/');
+	p_end = strchr(txt, '\0');
+	if (p_s == NULL || ((int) (p_end - p_s)) > 1) strcat(p_end, s);
+	strcat(p_end, wl_token);
+
+	fp = fopen(txt, "r");
+	fopen_res = (fp != NULL);
 #ifdef DEBUG
-	Debug("Testing \"%s\": %s.", buffer, (fp == NULL) ? "failed" : "present");
+	Debug("Testing \"%s\": %s.", txt, (fopen_res) ? "present" : "failed");
 #endif
-	return (fp != NULL);
+	if (fopen_res) {
+		fclose(fp);
+		return 1;
+	}
+	return 0;
 }
 
 /*
@@ -1612,91 +1625,61 @@ loadConfig(const char *path)
 }
 
 /*
- * Get the current language string from either the environment.
- * This is used to location the wordlist and other localized resources.
+ * Get the current language string either from the environment or
+ * from the command line.
  *
- * Sets the global variable 'language'
+ * Set the global variable "language". It is used to locate
+ * a word list and other localised resources.
+ *
+ * Return 1 if DEFAULT_LOCALE_PATH is not processed, 0 if it is,
+ * or -1 if the initialisation ultimately fails.
  */
 static int
-init_locale_prefix(char *prefix)
+init_locale(const char *cl_arg)
 {
-	char *lang = NULL, *p = NULL;
+	char *p_start;
+	const char *i18n_token = "i18n/";
 
-	lang = getenv("LANG");
-	if (lang != NULL) {
-		strcpy(language,prefix);
-		if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
-			strcat(language, "/");
+	strcpy(language, basePath);
+	strcat(language, i18n_token);
+	p_start = strchr(language, '\0');
 
-		strcat(language,"i18n/");
-		strcat(language, lang);
-		if (is_valid_locale(language)) return 1;
+	/* Use the command-line argument. */
+	if (cl_arg != NULL) {
+		if (detect_valid_locale_variant(p_start, cl_arg)) return 1;
+	}
 
-		while ((p = strrchr(language, '.')) != NULL) {
-			*p = 0;
-			if (is_valid_locale(language)) return 1;
-		}
-
-		if ((p = strrchr(language, '_')) != NULL) {
-			*p = 0;
-			if (is_valid_locale(language)) return 1;
-		}
+	/* Use the environment variable (presumably on a Unix-like OS). */
+	const char *env_lang = getenv("LANG");
+	if (env_lang != NULL) {
+		if (detect_valid_locale_variant(p_start, env_lang)) return 1;
 	}
 
 #ifdef WIN32
 	{
 		LCID lcid = GetThreadLocale();
-		strcpy(language,prefix);
-		if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
-			strcat(language, "/");
+		int buf_size = 6;
+		char buf[buf_size];
+		char *p_us;
+		const char *us = "_";
 
-		strcat(language,"i18n/");
-		GetLocaleInfoA(lcid, LOCALE_SISO639LANGNAME, 
-			language + strlen(language), sizeof(language));
-		p = language + strlen(language);
-		strcat(language, "_");
-		GetLocaleInfo(lcid, LOCALE_SISO3166CTRYNAME, 
-			language + strlen(language), sizeof(language));
-
-#ifdef DEBUG
-		Debug("Locale \"%s\".", language);
-#endif
-		if (is_valid_locale(language)) return 1;
-
-		*p = 0;
-		if (is_valid_locale(language)) return 1;
+		/* Use the current locale for the calling thread on Windows OS. */
+		if (GetLocaleInfoA(lcid, LOCALE_SISO639LANGNAME, 
+			(LPSTR) buf, buf_size)) {
+			p_us = strchr(buf, '\0');
+			buf_size -= (int) (p_us - buf);
+			strcat(p_us, us);
+			if (! GetLocaleInfoA(lcid, LOCALE_SISO3166CTRYNAME, 
+				(LPSTR) p_us, buf_size)) *p_us = '\0';
+			if (detect_valid_locale_variant(p_start, buf)) return 1;
+		}
 	}
 #endif /* WIN32 */
 
-	/* last resort - use the english locale */
-	strcpy(language, prefix);
-	if ((language[0] != 0) && (language[strlen(language)-1] != '/'))
-		strcat(language, "/");
-
-	strcat(language, DEFAULT_LOCALE_PATH);
-	return is_valid_locale(language);
-}
-
-/*
- * Get the current language string from either the environment or
- * the command line. This is used to location the wordlist and
- * other localized resources.
- *
- * Sets the global variable 'language'
- */
-static void
-init_locale(int argc, char *argv[])
-{
-	char *lang = NULL, *p = NULL;
-
-	strcpy(language, basePath);
-	strcpy(language,"i18n/");
-	if (argc == 2) {
-		strcat(language, argv[1]);
-		if (is_valid_locale(language)) return;
-	}
-
-	init_locale_prefix(basePath);
+	/* Use the default locale. */
+	const char *def_loc = &DEFAULT_LOCALE_PATH[strlen(i18n_token)];
+	if (detect_valid_locale_variant(p_start, def_loc)) return 0;
+	return -1;
 }
 
 static char *
@@ -1772,6 +1755,42 @@ configAlphabet(const char *line)
 	return 1;
 }
 
+static int
+trunc_locale_id(char *l_id_start)
+{
+	if (l_id_start == NULL) return 0;
+
+	char *p_end = strchr(l_id_start, '/');
+	if (p_end == NULL) p_end = strchr(l_id_start, '0');
+
+	char *p_sep = strchr(l_id_start, '.'); // the code page separator
+	if (p_sep == NULL || p_sep >= p_end)
+		p_sep = strchr(l_id_start, '_'); // the country-or-region separator
+	if (p_sep != NULL && p_sep >= p_end)
+		p_sep = NULL; // both separators are absent
+
+	if (p_sep != NULL) {
+		*p_sep = '\0';
+		return 1;
+	}
+	return 0;
+}
+
+static int
+detect_valid_locale_variant(char *language_tip, const char *l_id)
+{
+	const char s[] = "/";
+	strcat(language_tip, l_id);
+
+	do {
+		strcat(language_tip, s);
+		if (is_valid_locale(language)) return 1;
+	} while (trunc_locale_id(language_tip));
+
+	*language_tip = '\0';
+	return 0;
+}
+
 /***********************************************************
 synopsis: initialise graphics and sound, build the dictionary
 		  cache the images and start the game loop
@@ -1810,9 +1829,11 @@ main(int argc, char *argv[])
 	srand((unsigned int)time(NULL));
 
 	/* identify the resource locale */
-	init_locale(argc, argv);
-	if (language[strlen(language)-1] != '/')
-		strcat(language, "/");
+	char *locale_arg = (argc > 1) ? argv[1] : NULL;
+	if (init_locale(locale_arg) == -1) {
+		Error("Failed to initialise any resource locale!");
+		exit(1);
+	}
 
 	/* create dictionary */
 	strcpy(txt, language);
