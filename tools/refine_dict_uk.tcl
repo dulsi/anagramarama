@@ -16,7 +16,9 @@ proc encode {text src dest} {
   set pos 0
   while {[set init_ch [string index $src $pos]] != "" && \
     [set fin_ch [string index $dest $pos]] != ""} {
-    regsub $init_ch $text $fin_ch text
+    while {[set res [regsub $init_ch $text $fin_ch text]] != 0} {
+      # puts "$res, $text"
+    }
     incr pos 1
   }
 
