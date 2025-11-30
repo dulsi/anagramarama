@@ -24,10 +24,11 @@
 #include <string.h>
 #include "linked.h"
 
+static int compare(const char *lag, const char *rag, const char *ab);
+
 /*
  * Count the length of the linked list.
  */
-
 int
 Length(struct node *head)
 {
@@ -43,7 +44,6 @@ Length(struct node *head)
  * swap the data content of two linked list nodes without changing
  * the position of the node within the list
  */
-
 void
 swap(struct node **from, struct node **to)
 {
@@ -59,9 +59,8 @@ swap(struct node **from, struct node **to)
 /*
  * sort the list first alphabetically and then by increasing word length
  */
-
 void
-sort(struct node **headRef)
+sort(struct node **headRef, const char *ab)
 {
     struct node* left, *right;
     int completed = 0;
@@ -71,7 +70,7 @@ sort(struct node **headRef)
         right = left->next;
         completed = 1;
         for (; left && right; left = left->next, right = right->next) {
-            if (strcmp(left->anagram, right->anagram) > 0) {
+            if (compare(left->anagram, right->anagram, ab) > 0) {
                 swap(&left, &right);
                 completed = 0;
             }
@@ -95,7 +94,6 @@ sort(struct node **headRef)
 /*
  * Free the list and the allocated data in each node
  */
-
 void
 destroyAnswers(struct node** headRef)
 {
@@ -146,6 +144,44 @@ push(struct node **headRef, const char *anagram)
 
         *headRef = newNode;
     }
+}
+
+/*
+ * Compare anagrams against a specific alphabet.
+ */
+static int
+compare(const char *lag, const char *rag, const char *ab)
+{
+    if (ab == NULL) return strcmp(lag, rag);
+
+    const int ab_len = (int) strlen(ab);
+    if (ab_len < 2) return strcmp(lag, rag);
+
+    const char *lp = lag, *rp = rag;
+    char *lf, *rf;
+    int d;
+
+    while (*lp != '\0' && *rp != '\0') {
+        lf = strchr(ab, *lp);
+        rf = strchr(ab, *rp);
+
+        if (lf == NULL) {
+            if (rf == NULL) return 0;
+            return ab_len;
+        }
+        if (rf == NULL) return -ab_len;
+
+        d = (int) (strchr(ab, *lp) - strchr(ab, *rp));
+        if (d != 0) return d;
+
+        ++lp; ++rp;
+	}
+
+    if (*lp == '\0') {
+        if (*rp == '\0') return 0;
+        return -ab_len;
+    }
+    return ab_len;
 }
 
 #ifdef UNIT_TEST

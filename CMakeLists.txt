@@ -64,7 +64,7 @@ target_link_libraries(anagramarama PRIVATE SDL2::SDL2main SDL2::SDL2 SDL2_image:
 #Add_Executable (test_agcore ${TESTDLB_SOURCES})
 
 Install (TARGETS anagramarama RUNTIME DESTINATION ${BINDIR})
-Install (DIRECTORY ${PROJECT_SOURCE_DIR}/audio ${PROJECT_SOURCE_DIR}/gamerzilla ${PROJECT_SOURCE_DIR}/i18n DESTINATION ${DATAROOTDIR}/anagramarama/)
+Install (DIRECTORY ${PROJECT_SOURCE_DIR}/audio ${PROJECT_SOURCE_DIR}/gamerzilla ${PROJECT_SOURCE_DIR}/i18n DESTINATION ${DATAROOTDIR}/anagramarama)
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	Install (FILES man/anagramarama.6 DESTINATION ${DATAROOTDIR}/man/man6/)

@@ -30,7 +30,7 @@ struct node {
 
 int Length(struct node* head);
 void swap(struct node** from, struct node** to);
-void sort(struct node** headRef);
+void sort(struct node** headRef, const char* ab);
 void destroyAnswers(struct node** headRef);
 void push(struct node** headRef, const char *anagram);
 
