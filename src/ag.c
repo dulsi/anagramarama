@@ -161,7 +161,7 @@ struct sprite* clockSprite = NULL;
 struct sprite* scoreSprite = NULL;
 
 /* audio vars */
-int audio_enabled = 1;
+int audio_enabled = AUDIO_ON;
 Uint32 audio_len;
 Uint8 *audio_pos;
 struct sound {
@@ -519,10 +519,10 @@ checkGuess(char* answer, struct node* head)
 
 				if (len == bigWordLen) {
 					gotBigWord = 1;
-					if (audio_enabled) Mix_PlayChannel(-1, getSound("foundbig"), 0);
+					if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("foundbig"), 0);
 				} else {
 					/* just a normal word */
-					if (audio_enabled) Mix_PlayChannel(-1, getSound("found"),0);
+					if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("found"),0);
 				}
 
 				if (answersSought == answersGot) {
@@ -539,7 +539,7 @@ checkGuess(char* answer, struct node* head)
 				updateTheScore = 1;
 			} else {
 				foundDuplicate = 1;
-				if (audio_enabled) Mix_PlayChannel(-1, getSound("duplicate"),0);
+				if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("duplicate"),0);
 			}
 			updateAnswers = 1;
 			break;
@@ -557,8 +557,7 @@ checkGuess(char* answer, struct node* head)
 	}
 
 	if (!foundWord) {
-		if (audio_enabled)
-			Mix_PlayChannel(-1, getSound("badword"),0);
+		if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("badword"),0);
 	}
 #ifdef GAMERZILLA
 	else if (foundAllLength && !foundDuplicate) {
@@ -654,8 +653,17 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 		else SDL_SetWindowFullscreen(window, 0);
 
 		fullscreen = !fullscreen;
+		return;
 	}
-	else if (!gamePaused){
+
+	if (keyedLetter == SDLK_F2) {
+		if (audio_enabled != AUDIO_ERROR) {
+			audio_enabled = (audio_enabled == AUDIO_ON) ? AUDIO_OFF : AUDIO_ON;
+		}
+		return;
+	}
+
+	if (!gamePaused){
 		switch(keyedLetter){
 		case SDLK_ESCAPE:
 			/* clear has been pressed */
@@ -677,7 +685,7 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 					current->toY = SHUFFLE_BOX_Y;
 					current->box = SHUFFLE;
 
-					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-answer"), 0);
+					if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("click-answer"), 0);
 					break;
 				}
 
@@ -694,7 +702,7 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 			/* shuffle has been pressed */
 			shuffleRemaining = 1;
 
-			if (audio_enabled) Mix_PlayChannel(-1, getSound("shuffle"),0);
+			if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("shuffle"),0);
 			break;
 
 		default:
@@ -707,7 +715,7 @@ handleKeyboardEvent(SDL_Event *event, struct node* head,
 						current->toY = ANSWER_BOX_Y;
 						current->box = ANSWER;
 
-						if (audio_enabled) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
+						if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
 						break;
 					}
 				}
@@ -770,13 +778,13 @@ clickDetect(int button, int x, int y, SDL_Renderer *screen,
 					current->toY = ANSWER_BOX_Y;
 					current->box = ANSWER;
 
-					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
+					if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("click-shuffle"), 0);
 				} else{
 					current->toX = nextBlankPosition(SHUFFLE, &current->index);
 					current->toY = SHUFFLE_BOX_Y;
 					current->box = SHUFFLE;
 
-					if (audio_enabled) Mix_PlayChannel(-1, getSound("click-answer"), 0);
+					if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("click-answer"), 0);
 				}
 				break;
 			}
@@ -801,7 +809,7 @@ clickDetect(int button, int x, int y, SDL_Renderer *screen,
 			/* shuffle has been pressed */
 			shuffleRemaining = 1;
 
-			if (audio_enabled) Mix_PlayChannel(-1, getSound("shuffle"),0);
+			if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("shuffle"),0);
 		}
 	}
 
@@ -933,7 +941,7 @@ updateTime(SDL_Renderer* screen)
 
 	/* tick out the last 10 seconds */
 	if (thisTime<=10 && thisTime>0) {
-		if (audio_enabled) Mix_PlayChannel(-1, getSound("clock-tick"), 0);
+		if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("clock-tick"), 0);
 	}
 }
 
@@ -1490,7 +1498,7 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 		if (clearGuess) {
 			/* clear the guess */
 			if (clearWord(letters) > 0) {
-				if (audio_enabled) Mix_PlayChannel(-1, getSound("clear"),0);
+				if (audio_enabled == AUDIO_ON) Mix_PlayChannel(-1, getSound("clear"),0);
 			}
 			clearGuess = 0;
 		}
@@ -1807,8 +1815,6 @@ main(int argc, char *argv[])
 	struct node* head = NULL;
 	struct dlb_node* dlbHead = NULL;
 	struct sprite* letters = NULL;
-
-	/* buffer sounds */
 	int audio_rate = MIX_DEFAULT_FREQUENCY;
 	Uint16 audio_format = AUDIO_S16;
 	int audio_channels = 1;
@@ -1867,11 +1873,11 @@ main(int argc, char *argv[])
 	SDL_RenderClear(renderer);
 	SDL_RenderPresent(renderer);
 
+	/* Buffer sounds. */
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
 		Error("Unable to open the audio!");
-		audio_enabled = 0;
-	}
-	else bufferSounds(&soundCache);
+		audio_enabled = AUDIO_ERROR;
+	} else bufferSounds(&soundCache);
 
 	/* cache in-game graphics */
 	strcpy(txt, language);
@@ -1898,7 +1904,7 @@ main(int argc, char *argv[])
 	gameLoop(&head, dlbHead, renderer, &letters);
 
 	/* tidy up and exit */
-	if (audio_enabled) {
+	if (audio_enabled != AUDIO_ERROR) {
 		Mix_CloseAudio();
 		clearSoundBuffer();
 	}
