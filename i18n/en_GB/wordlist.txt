@@ -9072,8 +9072,6 @@ goofs
 goofy
 gooier
 gooiest
-gook
-gooks
 goon
 goons
 goop
@@ -17121,7 +17119,6 @@ redraws
 redress
 redrew
 reds
-redskin
 reduce
 reduced
 reduces
@@ -17441,8 +17438,6 @@ retains
 retake
 retaken
 retakes
-retard
-retards
 retch
 retched
 retches
