@@ -65,3 +65,8 @@ typedef struct Box {
                              SPACE_CHAR, SPACE_CHAR, SPACE_CHAR, 0}
 #define AVAILABLE_TIME 300
 #define DEFAULT_LOCALE_PATH "i18n/en_GB/"
+
+// Define the audio status codes.
+#define AUDIO_ERROR -1
+#define AUDIO_OFF 0
+#define AUDIO_ON 1
